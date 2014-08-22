@@ -1,0 +1,24 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+  <id>module</id>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <baseDirectory>/</baseDirectory>
+  <fileSets>
+    <fileSet>
+      <outputDirectory>/</outputDirectory>
+      <directory>${project.build.directory}/test-classes</directory>
+      <includes>
+        <include>io/vertx/mymodule/**/*.class</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+  <files>
+    <file>
+      <destName>/mod.json</destName>
+      <source>src/test/resources/mod.json</source>
+    </file>
+  </files>
+</assembly>
