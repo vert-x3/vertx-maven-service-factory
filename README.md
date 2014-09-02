@@ -10,7 +10,7 @@ Vertx vertx = Vertx.vertx();
 vertx.deployVerticle("maven:my:module:1.0");
 ~~~~
 
-== Todo
+## Todo
 
 * Support other kind of repositories
 * Maven : use straight Aether API instead of Shrinkwrap wrapper
