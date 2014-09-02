@@ -1,7 +1,7 @@
-vertx-maven-modules
+vertx-repo-modules
 ========
 
-Proof of concept of a verticle factory deploying Vert.x module from a Maven repository:
+Proof of concept of a verticle factory deploying Vert.x module from repositories:
 
 ~~~~
 Vertx vertx = Vertx.vertx();
@@ -10,3 +10,7 @@ Vertx vertx = Vertx.vertx();
 vertx.deployVerticle("maven:my:module:1.0");
 ~~~~
 
+== Todo
+
+* Support other kind of repositories
+* Maven : use straight Aether API instead of Shrinkwrap wrapper
