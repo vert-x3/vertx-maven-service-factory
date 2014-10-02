@@ -74,6 +74,14 @@
               <descriptor>src/test/assembly/module.xml</descriptor>
               <appendAssemblyId>false</appendAssemblyId>
               <finalName>my-module-1.0</finalName>
+              <archive>
+                <manifest>
+                  <mainClass>io.vertx.core.Starter</mainClass>
+                </manifest>
+                <manifestEntries>
+                  <Main-Verticle>java:io.vertx.mymodule.MyVerticle</Main-Verticle>
+                </manifestEntries>
+              </archive>
             </configuration>
             <goals>
               <goal>single</goal>

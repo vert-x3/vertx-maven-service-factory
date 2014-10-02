@@ -9,6 +9,6 @@ public class MyVerticle extends AbstractVerticle {
 
   @Override
   public void start() throws Exception {
-    System.out.println("DEPLOYED!!!");
+    vertx.eventBus().publish("mymodule", "whatever");
   }
 }

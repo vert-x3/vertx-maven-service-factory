@@ -15,10 +15,4 @@
       </includes>
     </fileSet>
   </fileSets>
-  <files>
-    <file>
-      <destName>/mod.json</destName>
-      <source>src/test/resources/mod.json</source>
-    </file>
-  </files>
 </assembly>

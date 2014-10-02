@@ -15,8 +15,9 @@ public class VerticleFactoryTest {
 
     Vertx vertx = Vertx.vertx();
     vertx.registerVerticleFactory(new MavenModuleFactory());
+    vertx.deployVerticle("maven:my:module:1.0");
     CountDownLatch latch = new CountDownLatch(1);
-    vertx.deployVerticle("maven:my:module:1.0", result -> latch.countDown());
+    vertx.eventBus().localConsumer("mymodule").handler(message -> latch.countDown());
     latch.await();
   }
 
