@@ -1,18 +1,14 @@
-package io.vertx.maven.modules;
+package io.vertx.maven;
 
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.MavenResolverSystem;
-
-import java.io.File;
-import java.util.Arrays;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class MavenModuleFactory implements VerticleFactory {
+public class MavenVerticleFactory implements VerticleFactory {
 
   private Vertx vertx;
 
@@ -28,11 +24,11 @@ public class MavenModuleFactory implements VerticleFactory {
 
   @Override
   public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
-    return new ModuleVerticle(classLoader, verticleName);
+    return new MavenVerticle(verticleName, vertx);
   }
 
   @Override
   public void close() {
-    vertx = null;
   }
+
 }

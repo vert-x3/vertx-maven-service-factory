@@ -16,6 +16,10 @@
 
   <name>Vert.x Maven Modules</name>
 
+  <properties>
+    <aether.version>1.0.0.v20140518</aether.version>
+  </properties>
+
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -37,15 +41,56 @@
       <version>3.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>org.jboss.shrinkwrap.resolver</groupId>
-      <artifactId>shrinkwrap-resolver-depchain</artifactId>
-      <version>2.1.1</version>
-      <type>pom</type>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-aether-provider</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-api</artifactId>
+      <version>${aether.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-connector-basic</artifactId>
+      <version>${aether.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-file</artifactId>
+      <version>${aether.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-transport-http</artifactId>
+      <version>${aether.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-spi</artifactId>
+      <version>${aether.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-impl</artifactId>
+      <version>${aether.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-util</artifactId>
+      <version>${aether.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
 
@@ -109,6 +154,42 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- We assemble the factory and all the deps we need into a shaded jar.
+      This means that when it appears in the Vert.x distro all the aether deps are nicely isolated here -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.3</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <!-- By default all the deps go into the fat jar, but we don't need some so we can exclude them
+                here -->
+                <excludes>
+                  <exclude>io.vertx:vertx-core</exclude>
+                  <exclude>io.netty:netty-all</exclude>
+                  <exclude>com.fasterxml.jackson.core:*</exclude>
+                  <exclude>junit:junit</exclude>
+                  <exclude>org.eclipse.sisu:*</exclude>
+                  <exclude>javax.enterprise:*</exclude>
+                  <exclude>com.google.guava:*</exclude>
+                  <exclude>org.sonatype.sisu:*</exclude>
+                  <exclude>aopalliance:*</exclude>
+                  <exclude>asm:*</exclude>
+                  <exclude>com.google.code.findbugs:*</exclude>
+                </excludes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
