@@ -46,11 +46,15 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 import java.io.File;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -67,6 +71,26 @@ public class MavenVerticle extends AbstractVerticle {
   private static final String DEFAULT_MAVEN_LOCAL = USER_HOME + FILE_SEP + ".m2" + FILE_SEP + "repository";
   private static final String DEFAULT_MAVEN_REMOTES =
     "http://central.maven.org/maven2/ http://oss.sonatype.org/content/repositories/snapshots/";
+
+  private static final Set<String> systemJars;
+
+  static {
+    systemJars = new HashSet<>();
+    ClassLoader cl = MavenVerticle.class.getClassLoader();
+    if (cl instanceof URLClassLoader) {
+      URLClassLoader urlc = (URLClassLoader)cl;
+      for (URL url: urlc.getURLs()) {
+        try {
+          File f = new File(url.toURI());
+          String name = f.getName();
+          if (name.endsWith(".jar")) {
+            systemJars.add(name);
+          }
+        } catch (URISyntaxException ignore) {
+        }
+      }
+    }
+  }
 
   private final String verticleName;
   private final Vertx vertx;
@@ -154,11 +178,22 @@ public class MavenVerticle extends AbstractVerticle {
         throw new VertxException("Cannot find module " + verticleName + ". Maybe repository URL is invalid?");
       }
 
+      // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
+      // then we don't add it to the classpath for the module
+      List<String> classpath = new ArrayList<>();
+      for (ArtifactResult res: artifactResults) {
+        File f = res.getArtifact().getFile();
+        if (!systemJars.contains(f.getName())) {
+          classpath.add(f.getAbsolutePath());
+        }
+      }
+
       for (ArtifactResult artifactResult : artifactResults) {
         Artifact art = artifactResult.getArtifact();
         String theGav = art.getGroupId() + ":" + art.getArtifactId() + ":" + art.getVersion();
         if (verticleName.equals(theGav)) {
           File file = art.getFile();
+
           try {
             try (ZipFile jar = new ZipFile(file)) {
               ZipEntry descriptorEntry = jar.getEntry("META-INF/MANIFEST.MF");
@@ -169,8 +204,6 @@ public class MavenVerticle extends AbstractVerticle {
                   if (Starter.class.getName().equals(attributes.getValue("Main-Class"))) {
                     main = attributes.getValue("Main-Verticle");
                     if (main != null) {
-                      List<String> classpath =
-                        artifactResults.stream().map(dep -> dep.getArtifact().getFile().getAbsolutePath()).collect(Collectors.toList());
                       options = new DeploymentOptions();
                       options.setExtraClasspath(classpath);
                       options.setIsolationGroup(verticleName);
@@ -189,6 +222,10 @@ public class MavenVerticle extends AbstractVerticle {
     }
   }
 
+  // NOTE
+  // No need to override stop and explicitly undeploy as the indirected deployment will be a child
+  // deployment of the service deployment so will be automatically undeployed when the parent is
+  // undeployed
 
 
 }
