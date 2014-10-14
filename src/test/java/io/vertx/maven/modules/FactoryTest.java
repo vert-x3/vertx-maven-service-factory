@@ -4,10 +4,19 @@ import io.vertx.maven.MavenVerticle;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FactoryTest extends VertxTestBase {
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    System.clearProperty(MavenVerticle.LOCAL_REPO_SYS_PROP);
+    System.clearProperty(MavenVerticle.REMOTE_REPOS_SYS_PROP);
+  }
 
   @Test
   public void testDeploy() throws Exception {
@@ -74,6 +83,20 @@ public class FactoryTest extends VertxTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testUndeploy() throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
+    vertx.eventBus().localConsumer("mymoduleStopped").handler(message -> latch.countDown());
+    vertx.deployVerticle("maven:my:module:1.0", res -> {
+      assertTrue(res.succeeded());
+      vertx.undeployVerticle(res.result(), res2 -> {
+        assertTrue(res2.succeeded());
+        latch.countDown();
+      });
+    });
+    awaitLatch(latch);
   }
 
 }

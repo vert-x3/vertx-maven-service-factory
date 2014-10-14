@@ -22,7 +22,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Starter;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.VertxInternal;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -70,115 +69,126 @@ public class MavenVerticle extends AbstractVerticle {
     "http://central.maven.org/maven2/ http://oss.sonatype.org/content/repositories/snapshots/";
 
   private final String verticleName;
-  private final VertxInternal vertx;
+  private final Vertx vertx;
 
   MavenVerticle(String verticleName, Vertx vertx) {
     this.verticleName = verticleName;
-    this.vertx = (VertxInternal)vertx;     // FIXME Naughty!!
+    this.vertx = vertx;
   }
 
   @Override
   public void start(Future<Void> startFuture) throws Exception {
-    vertx.executeBlocking(() -> {
-      resolve(startFuture);  // This can block for some time so run it on a worker
-      return null;
-    }, res -> {
-      if (res.failed()) {
+    ResolveWorker worker = new ResolveWorker();
+    vertx.deployVerticle(worker, new DeploymentOptions().setWorker(true), res -> {
+      if (res.succeeded()) {
+        vertx.deployVerticle(worker.main, worker.options, res2 -> {
+          if (res2.succeeded()) {
+            startFuture.complete();
+          } else {
+            startFuture.fail(res2.cause());
+          }
+        });
+      } else {
         startFuture.fail(res.cause());
       }
     });
   }
 
-  private void resolve(Future<Void> startFuture) {
-    DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-    locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-    locator.addService(TransporterFactory.class, FileTransporterFactory.class);
-    locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-    locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-      @Override
-      public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-        exception.printStackTrace();
-      }
-    });
-    RepositorySystem system = locator.getService(RepositorySystem.class);
-    DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-    String local = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
-    LocalRepository localRepo = new LocalRepository(local);
-    session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-    String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
-    // They are space delimited (space is illegal char in urls)
-    String[] remotes = remoteString.split(" ");
-    List<RemoteRepository> remoteList = new ArrayList<>();
-    int count = 0;
-    for (String remote: remotes) {
-      RemoteRepository remoteRepo = new RemoteRepository.Builder("repo" + (count++), "default", remote).build();
-      remoteList.add(remoteRepo);
-    }
-
-    Artifact artifact = new DefaultArtifact(verticleName);
-    DependencyFilter classpathFlter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
-    CollectRequest collectRequest = new CollectRequest();
-    collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
-    collectRequest.setRepositories(remoteList);
-
-    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFlter);
-
-    List<ArtifactResult> artifactResults;
-    try {
-      artifactResults =
-        system.resolveDependencies(session, dependencyRequest).getArtifactResults();
-    } catch (DependencyResolutionException e) {
-      throw new VertxException("Cannot find module " + verticleName + " in maven repositories");
-    }
-
-    for (ArtifactResult artifactResult : artifactResults) {
-      Artifact art = artifactResult.getArtifact();
-      String theGav = art.getGroupId() + ":" + art.getArtifactId() + ":" + art.getVersion();
-      if (verticleName.equals(theGav)) {
-        File file = art.getFile();
-        try {
-          try (ZipFile jar = new ZipFile(file)) {
-            ZipEntry descriptorEntry = jar.getEntry("META-INF/MANIFEST.MF");
-            if (descriptorEntry != null) {
-              try (InputStream in = jar.getInputStream(descriptorEntry)) {
-                Manifest manifest = new Manifest(in);
-                Attributes attributes = manifest.getMainAttributes();
-                if (Starter.class.getName().equals(attributes.getValue("Main-Class"))) {
-                  String main = attributes.getValue("Main-Verticle");
-                  if (main != null) {
-                    List<String> classpath =
-                      artifactResults.stream().map(dep -> dep.getArtifact().getFile().getAbsolutePath()).collect(Collectors.toList());
-                    DeploymentOptions options = new DeploymentOptions();
-                    options.setExtraClasspath(classpath);
-                    options.setIsolationGroup(verticleName);
-                    vertx.deployVerticle(main, options, result -> {
-                      if (result.succeeded()) {
-                        startFuture.complete();
-                      } else {
-                        startFuture.fail(result.cause());
-                      }
-                    });
-                    return;
-                  }
-                }
-              }
-            }
-          }
-        } catch (Exception e) {
-          throw new VertxException(e);
-        }
-      }
-    }
-    throw new VertxException("Module " + verticleName + " is not deployable");
-  }
-
-
   @Override
   public void stop(Future<Void> stopFuture) throws Exception {
     super.stop(stopFuture);
   }
+
+  // Resolution is blocking so we do it in a worker
+  private class ResolveWorker extends AbstractVerticle {
+
+    private String main;
+    private DeploymentOptions options;
+
+    @Override
+    public void start() throws Exception {
+
+      DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
+      locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
+      locator.addService(TransporterFactory.class, FileTransporterFactory.class);
+      locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
+      locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
+        @Override
+        public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
+          exception.printStackTrace();
+        }
+      });
+      RepositorySystem system = locator.getService(RepositorySystem.class);
+      DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+
+      String local = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
+      LocalRepository localRepo = new LocalRepository(local);
+      session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+
+      String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
+      // They are space delimited (space is illegal char in urls)
+      String[] remotes = remoteString.split(" ");
+      List<RemoteRepository> remoteList = new ArrayList<>();
+      int count = 0;
+      for (String remote: remotes) {
+        RemoteRepository remoteRepo = new RemoteRepository.Builder("repo" + (count++), "default", remote).build();
+        remoteList.add(remoteRepo);
+      }
+
+      Artifact artifact = new DefaultArtifact(verticleName);
+      DependencyFilter classpathFlter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
+      CollectRequest collectRequest = new CollectRequest();
+      collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
+      collectRequest.setRepositories(remoteList);
+
+      DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFlter);
+
+      List<ArtifactResult> artifactResults;
+      try {
+        artifactResults =
+          system.resolveDependencies(session, dependencyRequest).getArtifactResults();
+      } catch (DependencyResolutionException e) {
+        throw new VertxException("Cannot find module " + verticleName + " in maven repositories");
+      } catch (NullPointerException e) {
+        // Sucks, but aether throws a NPE if repository name is invalid....
+        throw new VertxException("Cannot find module " + verticleName + ". Maybe repository URL is invalid?");
+      }
+
+      for (ArtifactResult artifactResult : artifactResults) {
+        Artifact art = artifactResult.getArtifact();
+        String theGav = art.getGroupId() + ":" + art.getArtifactId() + ":" + art.getVersion();
+        if (verticleName.equals(theGav)) {
+          File file = art.getFile();
+          try {
+            try (ZipFile jar = new ZipFile(file)) {
+              ZipEntry descriptorEntry = jar.getEntry("META-INF/MANIFEST.MF");
+              if (descriptorEntry != null) {
+                try (InputStream in = jar.getInputStream(descriptorEntry)) {
+                  Manifest manifest = new Manifest(in);
+                  Attributes attributes = manifest.getMainAttributes();
+                  if (Starter.class.getName().equals(attributes.getValue("Main-Class"))) {
+                    main = attributes.getValue("Main-Verticle");
+                    if (main != null) {
+                      List<String> classpath =
+                        artifactResults.stream().map(dep -> dep.getArtifact().getFile().getAbsolutePath()).collect(Collectors.toList());
+                      options = new DeploymentOptions();
+                      options.setExtraClasspath(classpath);
+                      options.setIsolationGroup(verticleName);
+                      return;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (Exception e) {
+            throw new VertxException(e);
+          }
+        }
+      }
+      throw new VertxException("Module " + verticleName + " is not deployable");
+    }
+  }
+
 
 
 }

@@ -11,4 +11,9 @@ public class MyVerticle extends AbstractVerticle {
   public void start() throws Exception {
     vertx.eventBus().publish("mymodule", "whatever");
   }
+
+  @Override
+  public void stop() throws Exception {
+    vertx.eventBus().publish("mymoduleStopped", "whatever");
+  }
 }
