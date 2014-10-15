@@ -41,6 +41,11 @@
       <version>3.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-service-factory</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-aether-provider</artifactId>
       <version>3.1.0</version>
@@ -119,14 +124,14 @@
               <descriptor>src/test/assembly/module.xml</descriptor>
               <appendAssemblyId>false</appendAssemblyId>
               <finalName>my-module-1.0</finalName>
-              <archive>
-                <manifest>
-                  <mainClass>io.vertx.core.Starter</mainClass>
-                </manifest>
-                <manifestEntries>
-                  <Main-Verticle>java:io.vertx.mymodule.MyVerticle</Main-Verticle>
-                </manifestEntries>
-              </archive>
+              <!--<archive>-->
+                <!--<manifest>-->
+                  <!--<mainClass>io.vertx.core.Starter</mainClass>-->
+                <!--</manifest>-->
+                <!--<manifestEntries>-->
+                  <!--<Main-Verticle>java:io.vertx.mymodule.MyVerticle</Main-Verticle>-->
+                <!--</manifestEntries>-->
+              <!--</archive>-->
             </configuration>
             <goals>
               <goal>single</goal>

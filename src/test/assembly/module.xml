@@ -14,5 +14,12 @@
         <include>io/vertx/mymodule/**/*.class</include>
       </includes>
     </fileSet>
+    <fileSet>
+      <outputDirectory>/</outputDirectory>
+      <directory>${basedir}/src/test/conf</directory>
+      <includes>
+        <include>*.json</include>
+      </includes>
+    </fileSet>
   </fileSets>
 </assembly>
