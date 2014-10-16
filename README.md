@@ -12,6 +12,17 @@ Please see the [`ServiceVerticleFactory`](https://github.com/vert-x3/vertx-servi
 
 This `VerticleFactory` is used in the same way as the `ServiceVerticleFactory`, using the same prefix `service:`
 
+The only difference is that the version number in the service identifier is mandatory as this is needed to resolve the artifact from
+Maven properly, e.g.:
+
+The verticle can be deployed programmatically e.g.:
+    
+    vertx.deployVerticle("service:com.mycompany:clever-db-service:1.0", ...)
+        
+Or can be deployed on the command line with:
+  
+    vertx run maven:com.mycompany:clever-db-service:1.0
+
 ## Making it available    
     
 Vert.x picks up `VerticleFactory` implementations from the classpath, so you just need to make sure the`ServiceVerticleFactory`

@@ -3,6 +3,7 @@ package io.vertx.maven;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.VertxException;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.service.ServiceIndentifier;
 import io.vertx.service.ServiceVerticleFactory;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -91,6 +92,10 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   public String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
     RESOLVE_CALLED = true;
     String coords = VerticleFactory.removePrefix(identifier);
+    ServiceIndentifier serviceID = new ServiceIndentifier(coords);
+    if (serviceID.version() == null) {
+      throw new IllegalArgumentException("Invalid service identifier, missing version: " + coords);
+    }
     DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
     locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
     locator.addService(TransporterFactory.class, FileTransporterFactory.class);

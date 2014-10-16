@@ -113,4 +113,28 @@ public class FactoryTest extends VertxTestBase {
     awaitLatch(latch);
   }
 
+  @Test
+  public void testInvalidServiceIDNoVersion() throws Exception {
+    // Must always have version for Maven service factory
+    vertx.deployVerticle("service:my:module", res -> {
+      assertTrue(res.failed());
+      assertTrue(res.cause() instanceof IllegalArgumentException);
+      assertTrue(res.cause().getMessage().startsWith("Invalid service identifier"));
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testInvalidServiceID() throws Exception {
+    // Must always have version for Maven service factory
+    vertx.deployVerticle("service:uqwhdiuqwhdq", res -> {
+      assertTrue(res.failed());
+      assertTrue(res.cause() instanceof IllegalArgumentException);
+      assertTrue(res.cause().getMessage().startsWith("Invalid service identifier"));
+      testComplete();
+    });
+    await();
+  }
+
 }

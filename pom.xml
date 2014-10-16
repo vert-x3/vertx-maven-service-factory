@@ -11,10 +11,10 @@
   </parent>
 
   <groupId>io.vertx</groupId>
-  <artifactId>vertx-maven-modules</artifactId>
+  <artifactId>maven-service-factory</artifactId>
   <version>3.0.0-SNAPSHOT</version>
 
-  <name>Vert.x Maven Modules</name>
+  <name>Maven Service Factory</name>
 
   <properties>
     <aether.version>1.0.0.v20140518</aether.version>
