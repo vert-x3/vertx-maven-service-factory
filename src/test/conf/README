@@ -1,2 +1,0 @@
-NOTE! It is vital that this directory is not on the test classpath, otherwise the ServiceVerticleFactory will be able
-to read it, and the MavenVerticleFactory won't be properly tested

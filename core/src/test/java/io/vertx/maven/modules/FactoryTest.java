@@ -30,8 +30,8 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testDeploy() throws Exception {
-    vertx.deployVerticle("service:my:module:1.0", res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("service:my:module:1.0.0-SNAPSHOT", res -> {
+      assertTrue("Verticle could not be started: " + res.cause().toString(), res.succeeded());
       testComplete();
     });
     await();
@@ -40,7 +40,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testStartsOK() throws Exception {
     vertx.eventBus().localConsumer("mymodule").handler(message -> testComplete());
-    vertx.deployVerticle("service:my:module:1.0");
+    vertx.deployVerticle("service:my:module:1.0.0-SNAPSHOT");
     await();
   }
 

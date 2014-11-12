@@ -2,193 +2,38 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
-  </parent>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
 
-  <groupId>io.vertx</groupId>
-  <artifactId>maven-service-factory</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+    <groupId>io.vertx</groupId>
+    <artifactId>maven-service-factory-parent</artifactId>
+    <version>3.0.0-SNAPSHOT</version>
 
-  <name>Maven Service Factory</name>
+    <name>Maven Service Factory - Parent</name>
+    <packaging>pom</packaging>
 
-  <properties>
-    <aether.version>1.0.0.v20140518</aether.version>
-  </properties>
+    <modules>
+        <module>test-module</module>
+        <module>core</module>
+    </modules>
 
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-    <license>
-      <name>Eclipse Public License - v 1.0</name>
-      <url>http://www.eclipse.org/legal/epl-v10.html</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <dependencies>
-
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-      <version>3.0.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-service-factory</artifactId>
-      <version>3.0.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-aether-provider</artifactId>
-      <version>3.1.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-api</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-connector-basic</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-transport-file</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-transport-http</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-spi</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-impl</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-util</artifactId>
-      <version>${aether.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-      <version>3.0.0-SNAPSHOT</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.1</version>
-          <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-    <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4.1</version>
-        <executions>
-          <execution>
-            <configuration>
-              <descriptor>src/test/assembly/module.xml</descriptor>
-              <appendAssemblyId>false</appendAssemblyId>
-              <finalName>my-module-1.0</finalName>
-            </configuration>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <phase>process-test-classes</phase>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-install-plugin</artifactId>
-        <version>2.5.1</version>
-        <executions>
-          <execution>
-            <configuration>
-              <file>target/my-module-1.0.jar</file>
-              <packaging>jar</packaging>
-              <groupId>my</groupId>
-              <artifactId>module</artifactId>
-              <version>1.0</version>
-            </configuration>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <phase>process-test-classes</phase>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- We assemble the factory and all the deps we need into a shaded jar.
-      This means that when it appears in the Vert.x distro all the aether deps are nicely isolated here -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.3</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <artifactSet>
-                <!-- By default all the deps go into the fat jar, but we don't need some so we can exclude them
-                here -->
-                <excludes>
-                  <exclude>io.vertx:vertx-core</exclude>
-                  <exclude>io.netty:netty-all</exclude>
-                  <exclude>com.fasterxml.jackson.core:*</exclude>
-                  <exclude>junit:junit</exclude>
-                  <exclude>org.eclipse.sisu:*</exclude>
-                  <exclude>javax.enterprise:*</exclude>
-                  <exclude>com.google.guava:*</exclude>
-                  <exclude>org.sonatype.sisu:*</exclude>
-                  <exclude>aopalliance:*</exclude>
-                  <exclude>asm:*</exclude>
-                  <exclude>com.google.code.findbugs:*</exclude>
-                </excludes>
-              </artifactSet>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-    </plugins>
-  </build>
-
-
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
