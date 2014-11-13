@@ -149,8 +149,10 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     }
     URL[] urls = new URL[classpath.size()];
     int index = 0;
+    List<String> extraCP = new ArrayList<>(urls.length);
     for (String pathElement: classpath) {
       File file = new File(pathElement);
+      extraCP.add(file.getAbsolutePath());
       try {
         URL url = file.toURI().toURL();
         urls[index++] = url;
@@ -158,6 +160,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
         throw new IllegalStateException(e);
       }
     }
+    deploymentOptions.setExtraClasspath(extraCP);
+    deploymentOptions.setIsolationGroup("__vertx_maven_" + coords);
     URLClassLoader urlc = new URLClassLoader(urls, classLoader);
     return super.resolve(identifier, deploymentOptions, urlc);
   }
@@ -176,7 +180,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   public void setRemoteMavenRepos(List<String> remoteMavenRepos) {
     this.remoteMavenRepos = remoteMavenRepos;
-  }
+  }                                                                           ;
 
   // testing
   public static volatile boolean RESOLVE_CALLED;

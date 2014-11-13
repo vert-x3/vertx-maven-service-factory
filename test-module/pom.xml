@@ -2,38 +2,38 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>io.vertx</groupId>
-        <artifactId>maven-service-factory-parent</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
-    </parent>
+  <parent>
+    <groupId>io.vertx</groupId>
+    <artifactId>maven-service-factory-parent</artifactId>
+    <version>3.0.0-SNAPSHOT</version>
+  </parent>
 
-    <groupId>my</groupId>
-    <artifactId>module</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+  <groupId>my</groupId>
+  <artifactId>module</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
 
-    <name>Maven Service Factory - Test module</name>
+  <name>Maven Service Factory - Test module</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.7</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.7</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
