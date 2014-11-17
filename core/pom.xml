@@ -99,6 +99,23 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-test</id>
+              <configuration>
+                <systemPropertyVariables>
+                  <basedir>${basedir}</basedir>
+                </systemPropertyVariables>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <!-- We assemble the factory and all the deps we need into a shaded jar.
       This means that when it appears in the Vert.x distro all the aether deps are nicely isolated here -->

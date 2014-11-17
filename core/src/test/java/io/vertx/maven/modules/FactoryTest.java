@@ -1,10 +1,14 @@
 package io.vertx.maven.modules;
 
+import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.maven.MavenVerticleFactory;
+import io.vertx.service.ServiceVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -73,8 +77,14 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testSysPropsGood() throws Exception {
+    new JsonObject("{}");
+    Class<Verticle> abc = Verticle.class;
     String fileSep = System.getProperty("file.separator");
-    System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, System.getProperty("user.home") + fileSep + ".m2" + fileSep + "repository");
+    String localRepo = System.getProperty("basedir") + fileSep + ".." + fileSep + "test-repo" + fileSep + "target" + fileSep + "repo";
+    File localRepoFile = new File(localRepo);
+    assertTrue(localRepoFile.exists());
+    assertTrue(localRepoFile.isDirectory());
+    System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, localRepo);
     System.setProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP, "http://central.maven.org/maven2/ http://oss.sonatype.org/content/repositories/snapshots/");
     vertx.close();
     vertx = Vertx.vertx();

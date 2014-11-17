@@ -19,6 +19,7 @@
 
   <modules>
     <module>test-module</module>
+    <module>test-repo</module>
     <module>core</module>
   </modules>
 

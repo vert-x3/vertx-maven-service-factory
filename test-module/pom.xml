@@ -12,6 +12,7 @@
 
   <groupId>my</groupId>
   <artifactId>module</artifactId>
+  <packaging>jar</packaging>
   <version>1.0</version>
 
   <name>Maven Service Factory - Test module</name>
@@ -33,6 +34,26 @@
         <configuration>
           <skip>true</skip>
         </configuration>
+      </plugin>
+      <!-- Install the module jar in process-classes phase instead of package so it will be
+           available in the test phase -->
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>process-classes</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-install-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-install</id>
+            <phase>process-classes</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
