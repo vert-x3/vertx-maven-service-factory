@@ -1,14 +1,17 @@
 package io.vertx.maven.modules;
 
-import io.vertx.core.Verticle;
+import com.google.common.io.Files;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.maven.MavenVerticleFactory;
-import io.vertx.service.ServiceVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -76,23 +79,69 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
-  public void testSysPropsGood() throws Exception {
-    new JsonObject("{}");
-    Class<Verticle> abc = Verticle.class;
-    String fileSep = System.getProperty("file.separator");
-    String localRepo = System.getProperty("basedir") + fileSep + ".." + fileSep + "test-repo" + fileSep + "target" + fileSep + "repo";
-    File localRepoFile = new File(localRepo);
-    assertTrue(localRepoFile.exists());
-    assertTrue(localRepoFile.isDirectory());
-    System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, localRepo);
-    System.setProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP, "http://central.maven.org/maven2/ http://oss.sonatype.org/content/repositories/snapshots/");
-    vertx.close();
-    vertx = Vertx.vertx();
-    vertx.deployVerticle("service:my:module:1.0", res -> {
-      assertTrue(res.succeeded());
-      testComplete();
-    });
-    await();
+  public void testConfiguredResolveFromLocalRepository() throws Exception {
+    File testRepo = assertTestRepo();
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    testConfiguredRepo(testRepo, emptyRepo);
+  }
+
+  @Test
+  public void testConfiguredResolveFromRemoteRepository() throws Exception {
+    File testRepo = assertTestRepo();
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    testConfiguredRepo(emptyRepo, testRepo);
+  }
+
+  private void testConfiguredRepo(File localRepo, File remoteRepo) throws Exception {
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    Vertx vertx2 = Vertx.vertx();
+    try {
+      Thread t = new Thread() {
+        @Override
+        public void run() {
+          HttpServer server = vertx2.createHttpServer(new HttpServerOptions().setPort(8080).setHost("localhost"));
+          server.requestStream().handler(req -> {
+            String file = req.path().equals("/") ? "index.html" : req.path();
+            File f = new File(remoteRepo, file);
+            if (f.exists()) {
+              ByteArrayOutputStream baos = new ByteArrayOutputStream();
+              try {
+                Files.copy(f, baos);
+                byte[] data = baos.toByteArray();
+                req.response().setChunked(true).write(Buffer.buffer(data)).end();
+              } catch (IOException e) {
+                req.response().setStatusCode(500).end();
+              }
+            } else {
+              req.response().setStatusCode(404).end();
+            }
+          });
+          server.listen(ar -> {
+            assertTrue(ar.succeeded());
+            listenLatch.countDown();
+          });
+        }
+      };
+      t.start();
+      listenLatch.await();
+      System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, localRepo.getAbsolutePath());
+      System.setProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP, "http://localhost:8080/");
+      vertx.close();
+      vertx = Vertx.vertx();
+      vertx.deployVerticle("service:my:module:1.0", res -> {
+        assertTrue(res.succeeded());
+        testComplete();
+      });
+      await();
+    } finally {
+      CountDownLatch closeLatch = new CountDownLatch(1);
+      vertx2.close(v -> {
+        closeLatch.countDown();
+      });
+      closeLatch.await();
+    }
   }
 
   @Test
@@ -146,4 +195,12 @@ public class FactoryTest extends VertxTestBase {
     await();
   }
 
+  private File assertTestRepo() {
+    String fileSep = System.getProperty("file.separator");
+    String localRepo = System.getProperty("basedir") + fileSep + ".." + fileSep + "test-repo" + fileSep + "target" + fileSep + "repo";
+    File localRepoFile = new File(localRepo);
+    assertTrue(localRepoFile.exists());
+    assertTrue(localRepoFile.isDirectory());
+    return localRepoFile;
+  }
 }
