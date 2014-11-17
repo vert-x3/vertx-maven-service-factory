@@ -10,15 +10,20 @@
     <version>3.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>test-module</artifactId>
+  <artifactId>test-module-with-dep</artifactId>
 
-  <name>Maven Service Factory - Test module</name>
+  <name>Maven Service Factory - Test module with its own dependency</name>
 
   <dependencies>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
       <version>3.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.portlet</groupId>
+      <artifactId>portlet-api</artifactId>
+      <version>2.0</version>
     </dependency>
   </dependencies>
 
@@ -33,7 +38,7 @@
           <skip>true</skip>
         </configuration>
       </plugin>
-      <!-- Build the module jar in process-classes phase instead of package so it will be
+      <!-- Install the module jar in process-classes phase instead of package so it will be
            available in the test phase -->
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>

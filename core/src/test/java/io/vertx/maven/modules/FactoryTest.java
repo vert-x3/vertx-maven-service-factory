@@ -7,6 +7,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.maven.MavenVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
+import org.eclipse.aether.artifact.Artifact;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -19,9 +20,10 @@ import java.util.concurrent.CountDownLatch;
  */
 public class FactoryTest extends VertxTestBase {
 
+  private static final String FILE_SEP = System.getProperty("file.separator");
+
   @Override
   public void setUp() throws Exception {
-    System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, assertTestRepo().getAbsolutePath());
     super.setUp();
     System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
@@ -38,6 +40,8 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testDeploy() throws Exception {
+    File testRepo = createMyModuleRepository("testDeploy");
+    configureRepo(testRepo, null);
     vertx.deployVerticle("service:my:module:1.0", onSuccess(res -> {
       testComplete();
     }));
@@ -46,6 +50,8 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testStartsOK() throws Exception {
+    File testRepo = createMyModuleRepository("testStartsOK");
+    configureRepo(testRepo, null);
     vertx.eventBus().localConsumer("mymodule").handler(message -> testComplete());
     vertx.deployVerticle("service:my:module:1.0");
     await();
@@ -81,7 +87,7 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testConfiguredResolveFromLocalRepository() throws Exception {
-    File testRepo = assertTestRepo();
+    File testRepo = createMyModuleRepository("testConfiguredResolveFromLocalRepository");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
     testConfiguredRepo(testRepo, emptyRepo);
@@ -89,7 +95,23 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testConfiguredResolveFromRemoteRepository() throws Exception {
-    File testRepo = assertTestRepo();
+    File testRepo = createMyModuleRepository("testConfiguredResolveFromRemoteRepository");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    testConfiguredRepo(emptyRepo, testRepo);
+  }
+
+  @Test
+  public void testConfiguredResolveFromLocalRepositoryWithDep() throws Exception {
+    File testRepo = createMyModuleRepositoryWithDep("testConfiguredResolveFromLocalRepositoryWithDep");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    testConfiguredRepo(testRepo, emptyRepo);
+  }
+
+  @Test
+  public void testConfiguredResolveFromRemoteRepositoryWithDep() throws Exception {
+    File testRepo = createMyModuleRepositoryWithDep("testConfiguredResolveFromRemoteRepositoryWithDep");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
     testConfiguredRepo(emptyRepo, testRepo);
@@ -127,11 +149,11 @@ public class FactoryTest extends VertxTestBase {
       };
       t.start();
       listenLatch.await();
-      System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, localRepo.getAbsolutePath());
-      System.setProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP, "http://localhost:8080/");
-      vertx.close();
-      vertx = Vertx.vertx();
+      configureRepo(localRepo, "http://localhost:8080/");
       vertx.deployVerticle("service:my:module:1.0", res -> {
+        if (res.failed()) {
+          res.cause().printStackTrace();
+        }
         assertTrue(res.succeeded());
         testComplete();
       });
@@ -160,6 +182,8 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testUndeploy() throws Exception {
+    File testRepo = createMyModuleRepository("testUndeploy");
+    configureRepo(testRepo, null);
     CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().localConsumer("mymoduleStopped").handler(message -> latch.countDown());
     vertx.deployVerticle("service:my:module:1.0", res -> {
@@ -196,12 +220,59 @@ public class FactoryTest extends VertxTestBase {
     await();
   }
 
-  private File assertTestRepo() {
-    String fileSep = System.getProperty("file.separator");
-    String localRepo = System.getProperty("basedir") + fileSep + ".." + fileSep + "test-module" + fileSep + "target" + fileSep + "repo";
-    File localRepoFile = new File(localRepo);
-    assertTrue(localRepoFile.exists());
-    assertTrue(localRepoFile.isDirectory());
-    return localRepoFile;
+  private File createMyModuleRepository(String repoPath) throws Exception {
+    return createMyModuleRepository(
+        repoPath,
+        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("src" + FILE_SEP + "test" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
+    );
+  }
+
+  private File createMyModuleRepositoryWithDep(String repoPath) throws Exception {
+    return createMyModuleRepository(
+        repoPath,
+        new File(".." + FILE_SEP + "test-module-with-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("src" + FILE_SEP + "test" + FILE_SEP + "poms" + FILE_SEP + "test-module-with-dep.xml")
+    );
+  }
+
+  private File createMyModuleRepository(String repoPath, File jarFile, File pomFile) throws Exception {
+
+    // Create our test repo
+    File testRepo = new File("target" + FILE_SEP + repoPath);
+    assertFalse("Repository " + testRepo.getAbsolutePath() + " should not exists", testRepo.exists());
+    AetherHelper testHelper = new AetherHelper(testRepo.getAbsolutePath());
+
+    // Install my:module:jar:1.0
+    testHelper.installArtifact("my", "module", "1.0", jarFile, pomFile);
+
+    // Resolve all the dependencies of vertx-core we need from the local repository
+    // and install them in the test repo
+    String localRepository = System.getProperty("localRepository");
+    AetherHelper localHelper = new AetherHelper(localRepository);
+    for (Artifact dependency : localHelper.getDependencies("io.vertx", "vertx-core", "jar", "3.0.0-SNAPSHOT")) {
+      String path = dependency.getFile().getPath();
+      testHelper.installArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(),
+          dependency.getFile(), new File(path.substring(0, path.length() - 3) + "pom"));
+
+    }
+
+    // Make sure we have something
+    assertTrue(testRepo.exists());
+    assertTrue(testRepo.isDirectory());
+    return testRepo;
+  }
+
+  private void configureRepo(File localRepo, String remoteRepo) {
+    System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
+    System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
+    if (localRepo != null) {
+      System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, localRepo.getAbsolutePath());
+    }
+    if (remoteRepo != null) {
+      System.setProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP, remoteRepo);
+    }
+    vertx.close();
+    vertx = Vertx.vertx();
   }
 }

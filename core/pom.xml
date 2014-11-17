@@ -108,7 +108,7 @@
               <id>default-test</id>
               <configuration>
                 <systemPropertyVariables>
-                  <basedir>${basedir}</basedir>
+                  <localRepository>${settings.localRepository}</localRepository>
                 </systemPropertyVariables>
               </configuration>
             </execution>
