@@ -10,10 +10,7 @@
     <version>3.0.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>my</groupId>
-  <artifactId>module</artifactId>
-  <packaging>jar</packaging>
-  <version>1.0</version>
+  <artifactId>test-module</artifactId>
 
   <name>Maven Service Factory - Test module</name>
 
@@ -52,6 +49,21 @@
           <execution>
             <id>default-install</id>
             <phase>process-classes</phase>
+          </execution>
+          <execution>
+            <id>install</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <localRepositoryPath>${project.build.directory}/repo</localRepositoryPath>
+              <groupId>my</groupId>
+              <packaging>jar</packaging>
+              <artifactId>module</artifactId>
+              <version>1.0</version>
+              <file>${project.build.directory}/${pom.artifactId}-${pom.version}.jar</file>
+            </configuration>
           </execution>
         </executions>
       </plugin>

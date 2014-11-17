@@ -21,6 +21,7 @@ public class FactoryTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
+    System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, assertTestRepo().getAbsolutePath());
     super.setUp();
     System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
@@ -197,7 +198,7 @@ public class FactoryTest extends VertxTestBase {
 
   private File assertTestRepo() {
     String fileSep = System.getProperty("file.separator");
-    String localRepo = System.getProperty("basedir") + fileSep + ".." + fileSep + "test-repo" + fileSep + "target" + fileSep + "repo";
+    String localRepo = System.getProperty("basedir") + fileSep + ".." + fileSep + "test-module" + fileSep + "target" + fileSep + "repo";
     File localRepoFile = new File(localRepo);
     assertTrue(localRepoFile.exists());
     assertTrue(localRepoFile.isDirectory());
