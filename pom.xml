@@ -19,7 +19,8 @@
 
   <modules>
     <module>test-module</module>
-    <module>test-module-with-dep</module>
+    <module>test-module-dep</module>
+    <module>test-module-system-dep</module>
     <module>core</module>
   </modules>
 

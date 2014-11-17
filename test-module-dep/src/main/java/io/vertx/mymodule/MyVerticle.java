@@ -1,23 +1,23 @@
 package io.vertx.mymodule;
 
+import com.google.common.collect.BiMap;
 import io.vertx.core.AbstractVerticle;
-
-import javax.portlet.Portlet;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class MyVerticle extends AbstractVerticle {
 
-  Portlet portlet = null;
+  BiMap map = null;
 
   @Override
   public void start() throws Exception {
-    vertx.eventBus().publish("mymodule", "whatever");
+    if (BiMap.class.getClassLoader() != MyVerticle.class.getClassLoader()) {
+      throw new Exception("Dependency not loaded by the correct loader");
+    }
   }
 
   @Override
   public void stop() throws Exception {
-    vertx.eventBus().publish("mymoduleStopped", "whatever");
   }
 }

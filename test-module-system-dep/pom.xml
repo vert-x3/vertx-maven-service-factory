@@ -10,9 +10,9 @@
     <version>3.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>test-module-with-dep</artifactId>
+  <artifactId>test-module-system-dep</artifactId>
 
-  <name>Maven Service Factory - Test module with its own dependency</name>
+  <name>Maven Service Factory - Test module with a system dependency</name>
 
   <dependencies>
     <dependency>

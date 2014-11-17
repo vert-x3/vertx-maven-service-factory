@@ -12,6 +12,7 @@ import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResult;
@@ -49,6 +50,14 @@ public class AetherHelper {
     InstallRequest installRequest = new InstallRequest();
     installRequest.addArtifact(jarArtifact ).addArtifact( pomArtifact );
     system.install(session, installRequest);
+  }
+
+  public ArtifactResult resolveArtifact(String groupId, String artifactId, String extension, String version) throws Exception {
+    Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version);
+    ArtifactRequest request = new ArtifactRequest();
+    request.setArtifact(artifact);
+    request.setRepositories(Collections.emptyList());
+    return system.resolveArtifact(session, request);
   }
 
   public List<Artifact> getDependencies(String groupId, String artifactId, String extension, String version) throws Exception {
