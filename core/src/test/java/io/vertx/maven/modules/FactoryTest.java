@@ -30,7 +30,7 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testDeploy() throws Exception {
-    vertx.deployVerticle("service:my:module:1.0.0-SNAPSHOT", onSuccess(res -> {
+    vertx.deployVerticle("service:my:module:1.0", onSuccess(res -> {
       testComplete();
     }));
     await();
@@ -39,7 +39,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testStartsOK() throws Exception {
     vertx.eventBus().localConsumer("mymodule").handler(message -> testComplete());
-    vertx.deployVerticle("service:my:module:1.0.0-SNAPSHOT");
+    vertx.deployVerticle("service:my:module:1.0");
     await();
   }
 
