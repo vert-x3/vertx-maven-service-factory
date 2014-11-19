@@ -29,14 +29,12 @@ import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -51,26 +49,6 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   private static final String DEFAULT_MAVEN_LOCAL = USER_HOME + FILE_SEP + ".m2" + FILE_SEP + "repository";
   private static final String DEFAULT_MAVEN_REMOTES =
     "http://central.maven.org/maven2/ http://oss.sonatype.org/content/repositories/snapshots/";
-
-  private static final Set<String> systemJars;
-
-  static {
-    systemJars = new HashSet<>();
-    ClassLoader cl = MavenVerticleFactory.class.getClassLoader();
-    if (cl instanceof URLClassLoader) {
-      URLClassLoader urlc = (URLClassLoader)cl;
-      for (URL url: urlc.getURLs()) {
-        try {
-          File f = new File(url.toURI());
-          String name = f.getName();
-          if (name.endsWith(".jar")) {
-            systemJars.add(name);
-          }
-        } catch (URISyntaxException ignore) {
-        }
-      }
-    }
-  }
 
   private String localMavenRepo;
   private List<String> remoteMavenRepos;
@@ -140,13 +118,9 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
     // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
     // then we don't add it to the classpath for the module
-    List<String> classpath = new ArrayList<>();
-    for (ArtifactResult res: artifactResults) {
-      File f = res.getArtifact().getFile();
-      if (!systemJars.contains(f.getName())) {
-        classpath.add(f.getAbsolutePath());
-      }
-    }
+    List<String> classpath = artifactResults.stream().
+        map(res -> res.getArtifact().getFile().getAbsolutePath()).
+        collect(Collectors.toList());
     URL[] urls = new URL[classpath.size()];
     int index = 0;
     List<String> extraCP = new ArrayList<>(urls.length);
