@@ -3,21 +3,22 @@ package io.vertx.maven.modules;
 import com.google.common.io.Files;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.maven.MavenVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.jetty.proxy.ProxyServlet;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -27,16 +28,24 @@ public class FactoryTest extends VertxTestBase {
 
   private static final String FILE_SEP = System.getProperty("file.separator");
 
+  private List<Server> servers = new ArrayList<>();
+
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
     System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
+    System.clearProperty(MavenVerticleFactory.PROXY_PORT);
+    System.clearProperty(MavenVerticleFactory.PROXY_HOST);
     MavenVerticleFactory.RESOLVE_CALLED = false;
   }
 
   @Override
   public void tearDown() throws Exception {
+    for (Server server : servers) {
+      server.stop();
+    }
     // Sanity check to make sure the module was resolved with the MavenVerticleFactory not delegated
     // to the ServiceVerticleFactory
     assertTrue(MavenVerticleFactory.RESOLVE_CALLED);
@@ -46,7 +55,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testDeploy() throws Exception {
     File testRepo = createMyModuleRepository("testDeploy");
-    configureRepo(testRepo, null);
+    configureRepos(testRepo, null);
     vertx.deployVerticle("service:my:module:1.0", onSuccess(res -> {
       testComplete();
     }));
@@ -56,7 +65,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testStartsOK() throws Exception {
     File testRepo = createMyModuleRepository("testStartsOK");
-    configureRepo(testRepo, null);
+    configureRepos(testRepo, null);
     vertx.eventBus().localConsumer("mymodule").handler(message -> testComplete());
     vertx.deployVerticle("service:my:module:1.0");
     await();
@@ -95,7 +104,12 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromLocalRepository");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    testConfiguredRepo(testRepo, emptyRepo, new JsonObject());
+    startRemoteServer(emptyRepo);
+    configureRepos(testRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
   }
 
   @Test
@@ -103,7 +117,48 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromRemoteRepository");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    testConfiguredRepo(emptyRepo, testRepo, new JsonObject());
+    startRemoteServer(testRepo);
+    configureRepos(emptyRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
+  }
+
+  @Test
+  public void testConfiguredHttpProxy() throws Exception {
+    File testRepo = createMyModuleRepository("testConfiguredHttpProxy");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    startRemoteServer(testRepo);
+    System.setProperty(MavenVerticleFactory.PROXY_HOST, "localhost");
+    System.setProperty(MavenVerticleFactory.PROXY_PORT, "8081");
+    Server server = new Server(8081);
+    ServletHandler handler = new ServletHandler();
+    server.setHandler(handler);
+    handler.addServletWithMapping(ProxyServlet.class, "/*").setInitParameter("maxThreads", "10");
+    server.start();
+    servers.add(server);
+    configureRepos(emptyRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
+  }
+
+  @Test
+  public void testConfiguredHttpProxyFailure() throws Exception {
+    File testRepo = createMyModuleRepository("testConfiguredHttpProxyFailure");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    startRemoteServer(testRepo);
+    System.setProperty(MavenVerticleFactory.PROXY_HOST, "localhost");
+    System.setProperty(MavenVerticleFactory.PROXY_PORT, "8081");
+    configureRepos(emptyRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertFalse(res.succeeded());
+      testComplete();
+    });
   }
 
   @Test
@@ -111,7 +166,13 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepositoryWithSystemDep("testLoadSystemDependencyFromVerticleLoaderWhenAbsent");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    testConfiguredRepo(emptyRepo, testRepo, new JsonObject().put("loaded_globally", false));
+    startRemoteServer(testRepo);
+    configureRepos(emptyRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", false)), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
+    await();
   }
 
   @Test
@@ -128,7 +189,13 @@ public class FactoryTest extends VertxTestBase {
       File testRepo = createMyModuleRepositoryWithSystemDep("testLoadSystemDependencyFromParentLoaderWhenPresent");
       File emptyRepo = Files.createTempDir();
       emptyRepo.deleteOnExit();
-      testConfiguredRepo(emptyRepo, testRepo, new JsonObject().put("loaded_globally", true));
+      startRemoteServer(testRepo);
+      configureRepos(emptyRepo, "http://localhost:8080/");
+      vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", true)), res -> {
+        assertTrue(res.succeeded());
+        testComplete();
+      });
+      await();
     } finally {
       Thread.currentThread().setContextClassLoader(prev);
     }
@@ -139,7 +206,13 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepositoryWithDep("testLoadDependencyFromVerticleLoaderWhenAbsent");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    testConfiguredRepo(emptyRepo, testRepo, new JsonObject());
+    startRemoteServer(testRepo);
+    configureRepos(emptyRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
+    await();
   }
 
   @Test
@@ -156,60 +229,25 @@ public class FactoryTest extends VertxTestBase {
       File testRepo = createMyModuleRepositoryWithDep("testLoadDependencyFromVerticleLoaderWhenPresent");
       File emptyRepo = Files.createTempDir();
       emptyRepo.deleteOnExit();
-      testConfiguredRepo(emptyRepo, testRepo, new JsonObject());
-    } finally {
-      Thread.currentThread().setContextClassLoader(prev);
-    }
-  }
-
-  private void testConfiguredRepo(File localRepo, File remoteRepo, JsonObject config) throws Exception {
-    CountDownLatch listenLatch = new CountDownLatch(1);
-    Vertx vertx2 = Vertx.vertx();
-    try {
-      Thread t = new Thread() {
-        @Override
-        public void run() {
-          HttpServer server = vertx2.createHttpServer(new HttpServerOptions().setPort(8080).setHost("localhost"));
-          server.requestStream().handler(req -> {
-            String file = req.path().equals("/") ? "index.html" : req.path();
-            File f = new File(remoteRepo, file);
-            if (f.exists()) {
-              ByteArrayOutputStream baos = new ByteArrayOutputStream();
-              try {
-                Files.copy(f, baos);
-                byte[] data = baos.toByteArray();
-                req.response().setChunked(true).write(Buffer.buffer(data)).end();
-              } catch (IOException e) {
-                req.response().setStatusCode(500).end();
-              }
-            } else {
-              req.response().setStatusCode(404).end();
-            }
-          });
-          server.listen(ar -> {
-            assertTrue(ar.succeeded());
-            listenLatch.countDown();
-          });
-        }
-      };
-      t.start();
-      listenLatch.await();
-      configureRepo(localRepo, "http://localhost:8080/");
-      vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions().setConfig(config), res -> {
-        if (res.failed()) {
-          res.cause().printStackTrace();
-        }
+      startRemoteServer(testRepo);
+      configureRepos(emptyRepo, "http://localhost:8080/");
+      vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
         assertTrue(res.succeeded());
         testComplete();
       });
       await();
     } finally {
-      CountDownLatch closeLatch = new CountDownLatch(1);
-      vertx2.close(v -> {
-        closeLatch.countDown();
-      });
-      closeLatch.await();
+      Thread.currentThread().setContextClassLoader(prev);
     }
+  }
+
+  private void startRemoteServer(File remoteRepo) throws Exception {
+    Server server = new Server(8080);
+    ResourceHandler handler = new ResourceHandler();
+    handler.setResourceBase(remoteRepo.getAbsolutePath());
+    server.setHandler(handler);
+    server.start();
+    servers.add(server);
   }
 
   @Test
@@ -228,7 +266,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testUndeploy() throws Exception {
     File testRepo = createMyModuleRepository("testUndeploy");
-    configureRepo(testRepo, null);
+    configureRepos(testRepo, null);
     CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().localConsumer("mymoduleStopped").handler(message -> latch.countDown());
     vertx.deployVerticle("service:my:module:1.0", res -> {
@@ -315,7 +353,7 @@ public class FactoryTest extends VertxTestBase {
     return testRepo;
   }
 
-  private void configureRepo(File localRepo, String remoteRepo) {
+  private void configureRepos(File localRepo, String remoteRepo) {
     System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
     if (localRepo != null) {

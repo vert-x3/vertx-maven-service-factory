@@ -16,6 +16,8 @@ import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.Proxy;
+import org.eclipse.aether.repository.ProxySelector;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
@@ -26,6 +28,7 @@ import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
+import org.eclipse.aether.util.repository.DefaultProxySelector;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -43,6 +46,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   public static final String LOCAL_REPO_SYS_PROP = "vertx.maven.localRepo";
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
+  public static final String PROXY_HOST = "vertx.maven.proxyHost";
+  public static final String PROXY_PORT = "vertx.maven.proxyPort";
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
@@ -52,12 +57,16 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   private String localMavenRepo;
   private List<String> remoteMavenRepos;
+  private String proxyHost;
+  private String proxyPort;
 
   public MavenVerticleFactory() {
     localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
     String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
     // They are space delimited (space is illegal char in urls)
     remoteMavenRepos = Arrays.asList(remoteString.split(" "));
+    proxyHost = System.getProperty(PROXY_HOST);
+    proxyPort = System.getProperty(PROXY_PORT);
   }
 
   @Override
@@ -86,6 +95,11 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     });
     RepositorySystem system = locator.getService(RepositorySystem.class);
     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+
+    if (proxyHost != null) {
+      int port = proxyPort != null ? Integer.parseInt(proxyPort.trim()) : 80;
+      session.setProxySelector(repository -> new Proxy("http", proxyHost.trim(), port));
+    }
 
     LocalRepository localRepo = new LocalRepository(localMavenRepo);
     session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
