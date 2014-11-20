@@ -199,6 +199,22 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     this.remoteMavenRepos = remoteMavenRepos;
   };
 
+  public String getRemoteProxy() {
+    return remoteProxy;
+  }
+
+  public void setRemoteProxy(String remoteProxy) {
+    this.remoteProxy = remoteProxy;
+  }
+
+  public String getSecureRemoteProxy() {
+    return secureRemoteProxy;
+  }
+
+  public void setSecureRemoteProxy(String secureRemoteProxy) {
+    this.secureRemoteProxy = secureRemoteProxy;
+  }
+
   private static Authentication extractAuth(URL url) {
     String userInfo = url.getUserInfo();
     if (userInfo != null) {
