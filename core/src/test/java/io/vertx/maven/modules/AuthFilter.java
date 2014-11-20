@@ -1,7 +1,5 @@
 package io.vertx.maven.modules;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -51,7 +49,7 @@ public class AuthFilter implements Filter {
     String authz = req.getHeader(authorizationHeader);
     if (authz != null && authz.startsWith("Basic ")) {
       String secret = authz.substring(6);
-      String up = new String(Base64.decode(secret));
+      String up = new String(java.util.Base64.getDecoder().decode(secret));
       int index = up.indexOf(':');
       String username = up.substring(0, index);
       String password = up.substring(index + 1);
