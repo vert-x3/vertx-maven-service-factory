@@ -60,6 +60,27 @@ The default valus is `http://central.maven.org/maven2/ http://oss.sonatype.org/c
 You can also configure the repositories programmatically using the `setLocalMavenRepo(String localMavenRepo)` and 
 `setRemoteMavenRepos(List<String> remoteMavenRepos)` methods on the factory.
 
-## TODO
+## Remote repository access through authenticated https
 
-* Configuring auth
+You can specify https URLs for remote repositories, the client will uses the JSSE system properties
+configuration. Such configuration can be achieved via JVM system properties, for instance setting:
+
+```
+System.setProperty("javax.net.ssl.trustStore", "/my_trust_store.jks");
+System.setProperty("javax.net.ssl.trustStorePassword", "somepassword");
+```
+
+Note that programmatic configuration must be done before using the underlying Aether client. It can also be
+done using JVM configuration: `-Djavax.net.ssl.trustStore=/my_trust_store.jks -Djavax.net.ssl.trustStorePassword=somepassword`
+
+## Configuring proxies
+
+Repositories can be accessed using an http proxy using the `vertx.maven.httpProxy` and `vertx.maven.httpsProxy`.
+The former configures a proxy for remote http repositories and the later configures a proxy for remote http
+ repositories.
+
+## Configuring authentication
+
+Basic authentication can be achieved by adding a username and/or password in the repository or proxy configuration.
+For instance `http://foo:bar@myrepository.com/` will configure to use `foo` username and `bar`password if the
+remote server needs authentication. Proxies are also supported.
