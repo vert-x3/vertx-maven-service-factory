@@ -9,11 +9,18 @@ import io.vertx.test.core.VertxTestBase;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.jetty.proxy.ProxyServlet;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Test;
 
 import javax.servlet.DispatcherType;
@@ -38,6 +45,8 @@ public class FactoryTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
+    System.setProperty("javax.net.ssl.trustStore", new File(FactoryTest.class.getResource("client-truststore.jks").toURI()).getAbsolutePath());
+    System.setProperty("javax.net.ssl.trustStorePassword", "wibble");
     System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_PROXY_SYS_PROP);
@@ -107,7 +116,7 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromLocalRepository");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(emptyRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     configureRepos(testRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
@@ -121,8 +130,22 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromRemoteRepository");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(testRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testConfiguredResolveFromSecureRemoteRepository() throws Exception {
+    File testRepo = createMyModuleRepository("testConfiguredResolveFromSecureRemoteRepository");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    startRemoteServer(configureTls(createRemoteServer(testRepo)));
+    configureRepos(emptyRepo, "https://localhost:8443/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
       testComplete();
@@ -154,7 +177,7 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredHttpProxy");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(testRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.REMOTE_PROXY_SYS_PROP, "http://localhost:8081");
     Server server = new Server(8081);
     ServletHandler handler = new ServletHandler();
@@ -175,7 +198,7 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredAuthenticatingHttpProxy");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(testRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.REMOTE_PROXY_SYS_PROP, "http://username_value:password_value@localhost:8081");
     Server server = new Server(8081);
     ServletHandler handler = new ServletHandler();
@@ -199,7 +222,7 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepository("testConfiguredHttpProxyFailure");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(testRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.REMOTE_PROXY_SYS_PROP, "http://localhost:8081");
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
@@ -214,7 +237,7 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepositoryWithSystemDep("testLoadSystemDependencyFromVerticleLoaderWhenAbsent");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(testRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", false)), res -> {
       assertTrue(res.succeeded());
@@ -237,7 +260,7 @@ public class FactoryTest extends VertxTestBase {
       File testRepo = createMyModuleRepositoryWithSystemDep("testLoadSystemDependencyFromParentLoaderWhenPresent");
       File emptyRepo = Files.createTempDir();
       emptyRepo.deleteOnExit();
-      startRemoteServer(testRepo);
+      startRemoteServer(createRemoteServer(testRepo));
       configureRepos(emptyRepo, "http://localhost:8080/");
       vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", true)), res -> {
         assertTrue(res.succeeded());
@@ -254,7 +277,7 @@ public class FactoryTest extends VertxTestBase {
     File testRepo = createMyModuleRepositoryWithDep("testLoadDependencyFromVerticleLoaderWhenAbsent");
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
-    startRemoteServer(testRepo);
+    startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
@@ -277,7 +300,7 @@ public class FactoryTest extends VertxTestBase {
       File testRepo = createMyModuleRepositoryWithDep("testLoadDependencyFromVerticleLoaderWhenPresent");
       File emptyRepo = Files.createTempDir();
       emptyRepo.deleteOnExit();
-      startRemoteServer(testRepo);
+      startRemoteServer(createRemoteServer(testRepo));
       configureRepos(emptyRepo, "http://localhost:8080/");
       vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
         assertTrue(res.succeeded());
@@ -287,21 +310,6 @@ public class FactoryTest extends VertxTestBase {
     } finally {
       Thread.currentThread().setContextClassLoader(prev);
     }
-  }
-
-  private Server createRemoteServer(File remoteRepo) throws Exception {
-    Server server = new Server(8080);
-    ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
-    handler.setContextPath("/");
-    handler.addServlet(DefaultServlet.class, "/").setInitParameter("resourceBase", remoteRepo.getAbsolutePath());
-    server.setHandler(handler);
-    return server;
-  }
-
-  private void startRemoteServer(File remoteRepo) throws Exception {
-    Server server = createRemoteServer(remoteRepo);
-    server.start();
-    servers.add(server);
   }
 
   @Test
@@ -418,5 +426,41 @@ public class FactoryTest extends VertxTestBase {
     }
     vertx.close();
     vertx = Vertx.vertx();
+  }
+
+  private Server configureTls(Server server) throws Exception {
+    HttpConfiguration http_config = new HttpConfiguration();
+    http_config.setSecureScheme("https");
+    http_config.setSecurePort(8443);
+    http_config.setOutputBufferSize(32768);
+    ServerConnector http = new ServerConnector(server,new HttpConnectionFactory(http_config));
+    http.setPort(8080);
+    http.setIdleTimeout(30000);
+    SslContextFactory sslContextFactory = new SslContextFactory();
+    sslContextFactory.setKeyStorePath(new File(FactoryTest.class.getResource("server-keystore.jks").toURI()).getAbsolutePath());
+    sslContextFactory.setKeyStorePassword("wibble");
+    HttpConfiguration https_config = new HttpConfiguration(http_config);
+    https_config.addCustomizer(new SecureRequestCustomizer());
+    ServerConnector https = new ServerConnector(server,
+        new SslConnectionFactory(sslContextFactory,"http/1.1"),
+        new HttpConnectionFactory(https_config));
+    https.setPort(8443);
+    https.setIdleTimeout(500000);
+    server.setConnectors(new Connector[] { https });
+    return server;
+  }
+
+  private Server createRemoteServer(File remoteRepo) throws Exception {
+    Server server = new Server(8080);
+    ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+    handler.setContextPath("/");
+    handler.addServlet(DefaultServlet.class, "/").setInitParameter("resourceBase", remoteRepo.getAbsolutePath());
+    server.setHandler(handler);
+    return server;
+  }
+
+  private void startRemoteServer(Server server) throws Exception {
+    server.start();
+    servers.add(server);
   }
 }
