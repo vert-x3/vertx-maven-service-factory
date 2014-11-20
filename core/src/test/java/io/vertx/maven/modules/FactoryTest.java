@@ -183,11 +183,15 @@ public class FactoryTest extends VertxTestBase {
     ServletHandler handler = new ServletHandler();
     server.setHandler(handler);
     handler.addServletWithMapping(ProxyServlet.class, "/*").setInitParameter("maxThreads", "10");
+    URL expectedHost = new URL("http://localhost:8080/");
+    UrlCollectorFilter urlCollector = new UrlCollectorFilter();
+    handler.addFilterWithMapping(new FilterHolder(urlCollector), "/*", 0);
     server.start();
     servers.add(server);
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
+      assertTrue("Was expecting " + urlCollector.requestedHosts + " to contain " + expectedHost, urlCollector.requestedHosts.contains(expectedHost));
       testComplete();
     });
     await();
@@ -206,11 +210,15 @@ public class FactoryTest extends VertxTestBase {
     AuthFilter filter = AuthFilter.proxyAuthenticator("username_value", "password_value");
     handler.addFilterWithMapping(new FilterHolder(filter), "/*", 0);
     handler.addServletWithMapping(ProxyServlet.class, "/*").setInitParameter("maxThreads", "10");
+    URL expectedHost = new URL("http://localhost:8080/");
+    UrlCollectorFilter urlCollector = new UrlCollectorFilter();
+    handler.addFilterWithMapping(new FilterHolder(urlCollector), "/*", 0);
     server.start();
     servers.add(server);
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
+      assertTrue("Was expecting " + urlCollector.requestedHosts + " to contain " + expectedHost, urlCollector.requestedHosts.contains(expectedHost));
       assertTrue(filter.authenticated.get());
       testComplete();
     });

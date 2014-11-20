@@ -93,10 +93,11 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     RepositorySystem system = locator.getService(RepositorySystem.class);
     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
+    Proxy proxy = null;
     if (remoteProxy != null) {
       URL url = new URL(remoteProxy);
       Authentication authentication = extractAuth(url);
-      session.setProxySelector(repository -> new Proxy(url.getProtocol(), url.getHost(), url.getPort(), authentication));
+      proxy = new Proxy("http", url.getHost(), url.getPort(), authentication);
     }
 
     LocalRepository localRepo = new LocalRepository(localMavenRepo);
@@ -113,6 +114,9 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       RemoteRepository.Builder builder = new RemoteRepository.Builder("repo" + (count++), "default", url.toString());
       if (auth != null) {
         builder.setAuthentication(auth);
+      }
+      if (proxy != null) {
+        builder.setProxy(proxy);
       }
       RemoteRepository remoteRepo = builder.build();
       remotes.add(remoteRepo);
