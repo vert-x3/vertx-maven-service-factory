@@ -197,6 +197,32 @@ public class FactoryTest extends VertxTestBase {
     await();
   }
 
+  // @Test
+  // Cannot pass since the ProxyServlet does not support CONNECT and tunneling
+  public void testConfiguredHttpsProxy() throws Exception {
+    File testRepo = createMyModuleRepository("testConfiguredHttpsProxy");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    startRemoteServer(configureTls(createRemoteServer(testRepo)));
+    Server server = new Server(8081);
+    ServletHandler handler = new ServletHandler();
+    server.setHandler(handler);
+    handler.addServletWithMapping(ProxyServlet.class, "/").setInitParameter("maxThreads", "10");
+    UrlCollectorFilter urlCollector = new UrlCollectorFilter();
+    handler.addFilterWithMapping(new FilterHolder(urlCollector), "/*", 0);
+    server.start();
+    servers.add(server);
+    System.setProperty(MavenVerticleFactory.REMOTE_PROXY_SYS_PROP, "http://localhost:8081");
+    configureRepos(emptyRepo, "https://localhost:8443/");
+    URL expectedHost = new URL("http://localhost:8443/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      assertTrue("Was expecting " + urlCollector.requestedHosts + " to contain " + expectedHost, urlCollector.requestedHosts.contains(expectedHost));
+      testComplete();
+    });
+    await();
+  }
+
   @Test
   public void testConfiguredAuthenticatingHttpProxy() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredAuthenticatingHttpProxy");

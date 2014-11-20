@@ -47,6 +47,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   public static final String LOCAL_REPO_SYS_PROP = "vertx.maven.localRepo";
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
   public static final String REMOTE_PROXY_SYS_PROP = "vertx.maven.remoteProxy";
+  public static final String SECURE_REMOTE_PROXY_SYS_PROP = "vertx.maven.secureRemoteProxy";
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
@@ -57,6 +58,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   private String localMavenRepo;
   private List<String> remoteMavenRepos;
   private String remoteProxy;
+  private String secureRemoteProxy;
 
   public MavenVerticleFactory() {
     localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
@@ -64,6 +66,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     // They are space delimited (space is illegal char in urls)
     remoteMavenRepos = Arrays.asList(remoteString.split(" "));
     remoteProxy = System.getProperty(REMOTE_PROXY_SYS_PROP);
+    secureRemoteProxy = System.getProperty(SECURE_REMOTE_PROXY_SYS_PROP);
   }
 
   @Override
@@ -99,6 +102,12 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       Authentication authentication = extractAuth(url);
       proxy = new Proxy("http", url.getHost(), url.getPort(), authentication);
     }
+    Proxy secureProxy = null;
+    if (secureRemoteProxy != null) {
+      URL url = new URL(secureRemoteProxy);
+      Authentication authentication = extractAuth(url);
+      secureProxy = new Proxy("https", url.getHost(), url.getPort(), authentication);
+    }
 
     LocalRepository localRepo = new LocalRepository(localMavenRepo);
     session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
@@ -115,8 +124,17 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       if (auth != null) {
         builder.setAuthentication(auth);
       }
-      if (proxy != null) {
-        builder.setProxy(proxy);
+      switch (url.getProtocol()) {
+        case "http":
+          if (proxy != null) {
+            builder.setProxy(proxy);
+          }
+          break;
+        case "https":
+          if (secureProxy != null) {
+            builder.setProxy(secureProxy);
+          }
+          break;
       }
       RemoteRepository remoteRepo = builder.build();
       remotes.add(remoteRepo);
