@@ -46,10 +46,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   public static final String LOCAL_REPO_SYS_PROP = "vertx.maven.localRepo";
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
-  public static final String PROXY_HOST = "vertx.maven.proxyHost";
-  public static final String PROXY_PORT = "vertx.maven.proxyPort";
-  public static final String PROXY_USERNAME = "vertx.maven.proxyUsername";
-  public static final String PROXY_PASSWORD = "vertx.maven.proxyPassword";
+  public static final String REMOTE_PROXY_SYS_PROP = "vertx.maven.remoteProxy";
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
@@ -59,20 +56,14 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   private String localMavenRepo;
   private List<String> remoteMavenRepos;
-  private String proxyHost;
-  private String proxyPort;
-  private String proxyUsername;
-  private String proxyPassword;
+  private String remoteProxy;
 
   public MavenVerticleFactory() {
     localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
     String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
     // They are space delimited (space is illegal char in urls)
     remoteMavenRepos = Arrays.asList(remoteString.split(" "));
-    proxyHost = System.getProperty(PROXY_HOST);
-    proxyPort = System.getProperty(PROXY_PORT);
-    proxyUsername = System.getProperty(PROXY_USERNAME);
-    proxyPassword = System.getProperty(PROXY_PASSWORD);
+    remoteProxy = System.getProperty(REMOTE_PROXY_SYS_PROP);
   }
 
   @Override
@@ -102,18 +93,10 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     RepositorySystem system = locator.getService(RepositorySystem.class);
     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-    if (proxyHost != null) {
-      int port = proxyPort != null ? Integer.parseInt(proxyPort.trim()) : 80;
-      Authentication authentication;
-      if (proxyUsername != null && proxyPassword != null) {
-        AuthenticationBuilder builder = new AuthenticationBuilder();
-        builder.addUsername(proxyUsername);
-        builder.addPassword(proxyPassword);
-        authentication = builder.build();
-      } else {
-        authentication = null;
-      }
-      session.setProxySelector(repository -> new Proxy("http", proxyHost.trim(), port, authentication));
+    if (remoteProxy != null) {
+      URL url = new URL(remoteProxy);
+      Authentication authentication = extractAuth(url);
+      session.setProxySelector(repository -> new Proxy(url.getProtocol(), url.getHost(), url.getPort(), authentication));
     }
 
     LocalRepository localRepo = new LocalRepository(localMavenRepo);
@@ -123,21 +106,13 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     List<RemoteRepository> remotes = new ArrayList<>();
     for (String remote: remoteMavenRepos) {
       URL url = new URL(remote);
-      String userInfo = url.getUserInfo();
-      if (userInfo != null) {
+      Authentication auth = extractAuth(url);
+      if (auth != null) {
         url = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile());
       }
       RemoteRepository.Builder builder = new RemoteRepository.Builder("repo" + (count++), "default", url.toString());
-      if (userInfo != null) {
-        AuthenticationBuilder authBuilder = new AuthenticationBuilder();
-        int sep = userInfo.indexOf(':');
-        if (sep != -1) {
-          authBuilder.addUsername(userInfo.substring(0, sep));
-          authBuilder.addPassword(userInfo.substring(sep + 1));
-        } else {
-          authBuilder.addUsername(userInfo);
-        }
-        builder.setAuthentication(authBuilder.build());
+      if (auth != null) {
+        builder.setAuthentication(auth);
       }
       RemoteRepository remoteRepo = builder.build();
       remotes.add(remoteRepo);
@@ -200,7 +175,23 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   public void setRemoteMavenRepos(List<String> remoteMavenRepos) {
     this.remoteMavenRepos = remoteMavenRepos;
-  }                                                                           ;
+  };
+
+  private static Authentication extractAuth(URL url) {
+    String userInfo = url.getUserInfo();
+    if (userInfo != null) {
+      AuthenticationBuilder authBuilder = new AuthenticationBuilder();
+      int sep = userInfo.indexOf(':');
+      if (sep != -1) {
+        authBuilder.addUsername(userInfo.substring(0, sep));
+        authBuilder.addPassword(userInfo.substring(sep + 1));
+      } else {
+        authBuilder.addUsername(userInfo);
+      }
+      return authBuilder.build();
+    }
+    return null;
+  }
 
   // testing
   public static volatile boolean RESOLVE_CALLED;
