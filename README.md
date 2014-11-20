@@ -63,24 +63,36 @@ You can also configure the repositories programmatically using the `setLocalMave
 ## Remote repository access through authenticated https
 
 You can specify https URLs for remote repositories, the client will uses the JSSE system properties
-configuration. Such configuration can be achieved via JVM system properties, for instance setting:
+configuration. It can be achieved via JVM system properties, you can read more at http://maven.apache.org/guides/mini/guide-repository-ssl.html.
+
+### Using system properties
+
+It can configured when running the JVM: for instance `-Djavax.net.ssl.trustStore=/my_trust_store.jks -Djavax.net.ssl.trustStorePassword=somepassword`
+
+### Programmatically
 
 ```
 System.setProperty("javax.net.ssl.trustStore", "/my_trust_store.jks");
 System.setProperty("javax.net.ssl.trustStorePassword", "somepassword");
 ```
 
-Note that programmatic configuration must be done before using the underlying Aether client. It can also be
-done using JVM configuration: `-Djavax.net.ssl.trustStore=/my_trust_store.jks -Djavax.net.ssl.trustStorePassword=somepassword`
+Note that programmatic configuration must be done before using the underlying Aether client.
 
-## Configuring proxies
+## Remote repository access through proxies
+
+### Using system properties
 
 Repositories can be accessed using an http proxy using the `vertx.maven.httpProxy` and `vertx.maven.httpsProxy`.
 The former configures a proxy for remote http repositories and the later configures a proxy for remote http
  repositories.
 
+### Programmatically
+
+You can also configure the repositories programmatically using the `setHttpProxy(String httpProxy)` and
+`setHttpsProxy(String httpsProxy)` methods on the factory.
+
 ## Configuring authentication
 
 Basic authentication can be achieved by adding a username and/or password in the repository or proxy configuration.
-For instance `http://foo:bar@myrepository.com/` will configure to use `foo` username and `bar`password if the
+For instance `http://julien:secret@myrepository.com/` will configure to use `julien` username and `secret` password if the
 remote server needs authentication. Proxies are also supported.
