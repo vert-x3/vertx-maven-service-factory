@@ -110,6 +110,7 @@ public class FactoryTest extends VertxTestBase {
       assertTrue(res.succeeded());
       testComplete();
     });
+    await();
   }
 
   @Test
@@ -123,6 +124,7 @@ public class FactoryTest extends VertxTestBase {
       assertTrue(res.succeeded());
       testComplete();
     });
+    await();
   }
 
   @Test
@@ -144,6 +146,7 @@ public class FactoryTest extends VertxTestBase {
       assertTrue(res.succeeded());
       testComplete();
     });
+    await();
   }
 
   @Test
@@ -159,6 +162,7 @@ public class FactoryTest extends VertxTestBase {
       assertFalse(res.succeeded());
       testComplete();
     });
+    await();
   }
 
   @Test
