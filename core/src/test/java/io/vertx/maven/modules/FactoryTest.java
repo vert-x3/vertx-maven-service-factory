@@ -11,8 +11,9 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.junit.Test;
 
@@ -313,8 +314,9 @@ public class FactoryTest extends VertxTestBase {
 
   private void startRemoteServer(File remoteRepo) throws Exception {
     Server server = new Server(8080);
-    ResourceHandler handler = new ResourceHandler();
-    handler.setResourceBase(remoteRepo.getAbsolutePath());
+    ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+    handler.setContextPath("/");
+    handler.addServlet(DefaultServlet.class, "/").setInitParameter("resourceBase", remoteRepo.getAbsolutePath());
     server.setHandler(handler);
     server.start();
     servers.add(server);
