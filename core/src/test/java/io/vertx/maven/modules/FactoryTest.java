@@ -173,6 +173,23 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testConfiguredResolveFromSecureRemoteAuthenticatingRepository() throws Exception {
+    File testRepo = createMyModuleRepository("testConfiguredResolveFromSecureRemoteAuthenticatingRepository");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    Server server = createRemoteServer(testRepo);
+    AuthFilter filter = AuthFilter.serverAuthenticator("username_value", "password_value");
+    ((ServletContextHandler) server.getHandler()).addFilter(new FilterHolder(filter), "/*", EnumSet.of(DispatcherType.REQUEST));
+    startRemoteServer(configureTls(server));
+    configureRepos(emptyRepo, "https://username_value:password_value@localhost:8443/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testConfiguredHttpProxy() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredHttpProxy");
     File emptyRepo = Files.createTempDir();
