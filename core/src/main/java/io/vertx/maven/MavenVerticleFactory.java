@@ -15,6 +15,9 @@ import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.eclipse.aether.repository.Authentication;
+import org.eclipse.aether.repository.AuthenticationContext;
+import org.eclipse.aether.repository.AuthenticationDigest;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.Proxy;
 import org.eclipse.aether.repository.ProxySelector;
@@ -28,6 +31,7 @@ import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
+import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.eclipse.aether.util.repository.DefaultProxySelector;
 
 import java.io.File;
@@ -37,6 +41,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +53,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
   public static final String PROXY_HOST = "vertx.maven.proxyHost";
   public static final String PROXY_PORT = "vertx.maven.proxyPort";
+  public static final String PROXY_USERNAME = "vertx.maven.proxyUsername";
+  public static final String PROXY_PASSWORD = "vertx.maven.proxyPassword";
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
@@ -59,6 +66,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   private List<String> remoteMavenRepos;
   private String proxyHost;
   private String proxyPort;
+  private String proxyUsername;
+  private String proxyPassword;
 
   public MavenVerticleFactory() {
     localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
@@ -67,6 +76,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     remoteMavenRepos = Arrays.asList(remoteString.split(" "));
     proxyHost = System.getProperty(PROXY_HOST);
     proxyPort = System.getProperty(PROXY_PORT);
+    proxyUsername = System.getProperty(PROXY_USERNAME);
+    proxyPassword = System.getProperty(PROXY_PASSWORD);
   }
 
   @Override
@@ -98,7 +109,16 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
     if (proxyHost != null) {
       int port = proxyPort != null ? Integer.parseInt(proxyPort.trim()) : 80;
-      session.setProxySelector(repository -> new Proxy("http", proxyHost.trim(), port));
+      Authentication authentication;
+      if (proxyUsername != null && proxyPassword != null) {
+        AuthenticationBuilder builder = new AuthenticationBuilder();
+        builder.addUsername(proxyUsername);
+        builder.addPassword(proxyPassword);
+        authentication = builder.build();
+      } else {
+        authentication = null;
+      }
+      session.setProxySelector(repository -> new Proxy("http", proxyHost.trim(), port, authentication));
     }
 
     LocalRepository localRepo = new LocalRepository(localMavenRepo);
