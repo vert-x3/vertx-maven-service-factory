@@ -46,8 +46,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   public static final String LOCAL_REPO_SYS_PROP = "vertx.maven.localRepo";
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
-  public static final String REMOTE_PROXY_SYS_PROP = "vertx.maven.remoteProxy";
-  public static final String SECURE_REMOTE_PROXY_SYS_PROP = "vertx.maven.secureRemoteProxy";
+  public static final String HTTP_SYS_PROP = "vertx.maven.httpProxy";
+  public static final String HTTPS_PROXY_SYS_PROP = "vertx.maven.httpsProxy";
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
@@ -57,16 +57,16 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   private String localMavenRepo;
   private List<String> remoteMavenRepos;
-  private String remoteProxy;
-  private String secureRemoteProxy;
+  private String httpProxy;
+  private String httpsProxy;
 
   public MavenVerticleFactory() {
     localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
     String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
     // They are space delimited (space is illegal char in urls)
     remoteMavenRepos = Arrays.asList(remoteString.split(" "));
-    remoteProxy = System.getProperty(REMOTE_PROXY_SYS_PROP);
-    secureRemoteProxy = System.getProperty(SECURE_REMOTE_PROXY_SYS_PROP);
+    httpProxy = System.getProperty(HTTP_SYS_PROP);
+    httpsProxy = System.getProperty(HTTPS_PROXY_SYS_PROP);
   }
 
   @Override
@@ -97,14 +97,14 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
     Proxy proxy = null;
-    if (remoteProxy != null) {
-      URL url = new URL(remoteProxy);
+    if (httpProxy != null) {
+      URL url = new URL(httpProxy);
       Authentication authentication = extractAuth(url);
       proxy = new Proxy("http", url.getHost(), url.getPort(), authentication);
     }
     Proxy secureProxy = null;
-    if (secureRemoteProxy != null) {
-      URL url = new URL(secureRemoteProxy);
+    if (httpsProxy != null) {
+      URL url = new URL(httpsProxy);
       Authentication authentication = extractAuth(url);
       secureProxy = new Proxy("https", url.getHost(), url.getPort(), authentication);
     }
@@ -199,20 +199,20 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     this.remoteMavenRepos = remoteMavenRepos;
   };
 
-  public String getRemoteProxy() {
-    return remoteProxy;
+  public String getHttpProxy() {
+    return httpProxy;
   }
 
-  public void setRemoteProxy(String remoteProxy) {
-    this.remoteProxy = remoteProxy;
+  public void setHttpProxy(String httpProxy) {
+    this.httpProxy = httpProxy;
   }
 
-  public String getSecureRemoteProxy() {
-    return secureRemoteProxy;
+  public String getHttpsProxy() {
+    return httpsProxy;
   }
 
-  public void setSecureRemoteProxy(String secureRemoteProxy) {
-    this.secureRemoteProxy = secureRemoteProxy;
+  public void setHttpsProxy(String httpsProxy) {
+    this.httpsProxy = httpsProxy;
   }
 
   private static Authentication extractAuth(URL url) {
