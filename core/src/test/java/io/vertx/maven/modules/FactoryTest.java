@@ -1,7 +1,6 @@
 package io.vertx.maven.modules;
 
 import com.google.common.io.Files;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -17,22 +16,14 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.junit.Test;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.DispatcherType;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -141,6 +132,25 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testConfiguredResolveFromRemoteAuthenticatingRepository() throws Exception {
+    File testRepo = createMyModuleRepository("testConfiguredResolveFromRemoteAuthenticatingRepository");
+    File emptyRepo = Files.createTempDir();
+    emptyRepo.deleteOnExit();
+    Server server = createRemoteServer(testRepo);
+    AuthFilter filter = AuthFilter.serverAuthenticator("username_value", "password_value");
+    ((ServletContextHandler) server.getHandler()).addFilter(new FilterHolder(filter), "/*", EnumSet.of(DispatcherType.REQUEST));
+    server.start();
+    servers.add(server);
+    configureRepos(emptyRepo, "http://username_value:password_value@localhost:8080/");
+    vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
+      assertTrue(res.succeeded());
+      assertTrue(filter.authenticated.get());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testConfiguredHttpProxy() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredHttpProxy");
     File emptyRepo = Files.createTempDir();
@@ -175,42 +185,15 @@ public class FactoryTest extends VertxTestBase {
     Server server = new Server(8081);
     ServletHandler handler = new ServletHandler();
     server.setHandler(handler);
-    AtomicBoolean authenticated = new AtomicBoolean();
-    handler.addFilterWithMapping(new FilterHolder(new Filter() {
-      @Override
-      public void init(FilterConfig filterConfig) throws ServletException {
-      }
-      @Override
-      public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest req = (HttpServletRequest) servletRequest;
-        String authz = req.getHeader("Proxy-Authorization");
-        if (authz != null && authz.startsWith("Basic ")) {
-          String secret = authz.substring(6);
-          String up = new String(Base64.decode(secret));
-          int index = up.indexOf(':');
-          String username = up.substring(0, index);
-          String password = up.substring(index + 1);
-          if (username.equals("username_value") && password.equals("password_value")) {
-            authenticated.set(true);
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
-          }
-        }
-        HttpServletResponse resp = (HttpServletResponse) servletResponse;
-        resp.addHeader("Proxy-Authenticate", "Basic realm=\"Jetty Proxy Authorization\"");
-        resp.setStatus(HttpServletResponse.SC_PROXY_AUTHENTICATION_REQUIRED);
-      }
-      @Override
-      public void destroy() {
-      }
-    }), "/*", 0);
+    AuthFilter filter = AuthFilter.proxyAuthenticator("username_value", "password_value");
+    handler.addFilterWithMapping(new FilterHolder(filter), "/*", 0);
     handler.addServletWithMapping(ProxyServlet.class, "/*").setInitParameter("maxThreads", "10");
     server.start();
     servers.add(server);
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
-      assertTrue(authenticated.get());
+      assertTrue(filter.authenticated.get());
       testComplete();
     });
     await();
@@ -312,12 +295,17 @@ public class FactoryTest extends VertxTestBase {
     }
   }
 
-  private void startRemoteServer(File remoteRepo) throws Exception {
+  private Server createRemoteServer(File remoteRepo) throws Exception {
     Server server = new Server(8080);
     ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     handler.setContextPath("/");
     handler.addServlet(DefaultServlet.class, "/").setInitParameter("resourceBase", remoteRepo.getAbsolutePath());
     server.setHandler(handler);
+    return server;
+  }
+
+  private void startRemoteServer(File remoteRepo) throws Exception {
+    Server server = createRemoteServer(remoteRepo);
     server.start();
     servers.add(server);
   }

@@ -16,11 +16,8 @@ import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.Authentication;
-import org.eclipse.aether.repository.AuthenticationContext;
-import org.eclipse.aether.repository.AuthenticationDigest;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.Proxy;
-import org.eclipse.aether.repository.ProxySelector;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
@@ -32,7 +29,6 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.aether.util.repository.AuthenticationBuilder;
-import org.eclipse.aether.util.repository.DefaultProxySelector;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -41,7 +37,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -127,7 +122,24 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     int count = 0;
     List<RemoteRepository> remotes = new ArrayList<>();
     for (String remote: remoteMavenRepos) {
-      RemoteRepository remoteRepo = new RemoteRepository.Builder("repo" + (count++), "default", remote).build();
+      URL url = new URL(remote);
+      String userInfo = url.getUserInfo();
+      if (userInfo != null) {
+        url = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile());
+      }
+      RemoteRepository.Builder builder = new RemoteRepository.Builder("repo" + (count++), "default", url.toString());
+      if (userInfo != null) {
+        AuthenticationBuilder authBuilder = new AuthenticationBuilder();
+        int sep = userInfo.indexOf(':');
+        if (sep != -1) {
+          authBuilder.addUsername(userInfo.substring(0, sep));
+          authBuilder.addPassword(userInfo.substring(sep + 1));
+        } else {
+          authBuilder.addUsername(userInfo);
+        }
+        builder.setAuthentication(authBuilder.build());
+      }
+      RemoteRepository remoteRepo = builder.build();
       remotes.add(remoteRepo);
     }
 
