@@ -49,7 +49,7 @@ public class FactoryTest extends VertxTestBase {
     System.setProperty("javax.net.ssl.trustStorePassword", "wibble");
     System.clearProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP);
     System.clearProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP);
-    System.clearProperty(MavenVerticleFactory.HTTP_SYS_PROP);
+    System.clearProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP);
     MavenVerticleFactory.RESOLVE_CALLED = false;
   }
 
@@ -195,7 +195,7 @@ public class FactoryTest extends VertxTestBase {
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
-    System.setProperty(MavenVerticleFactory.HTTP_SYS_PROP, "http://localhost:8081");
+    System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     Server server = new Server(8081);
     ServletHandler handler = new ServletHandler();
     server.setHandler(handler);
@@ -229,7 +229,7 @@ public class FactoryTest extends VertxTestBase {
     handler.addFilterWithMapping(new FilterHolder(urlCollector), "/*", 0);
     server.start();
     servers.add(server);
-    System.setProperty(MavenVerticleFactory.HTTP_SYS_PROP, "http://localhost:8081");
+    System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     configureRepos(emptyRepo, "https://localhost:8443/");
     URL expectedHost = new URL("http://localhost:8443/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
@@ -246,7 +246,7 @@ public class FactoryTest extends VertxTestBase {
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
-    System.setProperty(MavenVerticleFactory.HTTP_SYS_PROP, "http://username_value:password_value@localhost:8081");
+    System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://username_value:password_value@localhost:8081");
     Server server = new Server(8081);
     ServletHandler handler = new ServletHandler();
     server.setHandler(handler);
@@ -274,7 +274,7 @@ public class FactoryTest extends VertxTestBase {
     File emptyRepo = Files.createTempDir();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
-    System.setProperty(MavenVerticleFactory.HTTP_SYS_PROP, "http://localhost:8081");
+    System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     configureRepos(emptyRepo, "http://localhost:8080/");
     vertx.deployVerticle("service:my:module:1.0", new DeploymentOptions(), res -> {
       assertFalse(res.succeeded());

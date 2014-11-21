@@ -46,7 +46,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
   public static final String LOCAL_REPO_SYS_PROP = "vertx.maven.localRepo";
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
-  public static final String HTTP_SYS_PROP = "vertx.maven.httpProxy";
+  public static final String HTTP_PROXY_SYS_PROP = "vertx.maven.httpProxy";
   public static final String HTTPS_PROXY_SYS_PROP = "vertx.maven.httpsProxy";
 
   private static final String USER_HOME = System.getProperty("user.home");
@@ -65,7 +65,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
     // They are space delimited (space is illegal char in urls)
     remoteMavenRepos = Arrays.asList(remoteString.split(" "));
-    httpProxy = System.getProperty(HTTP_SYS_PROP);
+    httpProxy = System.getProperty(HTTP_PROXY_SYS_PROP);
     httpsProxy = System.getProperty(HTTPS_PROXY_SYS_PROP);
   }
 
