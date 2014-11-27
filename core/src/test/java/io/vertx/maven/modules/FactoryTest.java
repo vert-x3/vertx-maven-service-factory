@@ -454,11 +454,8 @@ public class FactoryTest extends VertxTestBase {
     // and install them in the test repo
     String localRepository = System.getProperty("localRepository");
     AetherHelper localHelper = new AetherHelper(localRepository);
-    for (Artifact dependency : localHelper.getDependencies("io.vertx", "vertx-core", "jar", "3.0.0-SNAPSHOT")) {
-      String path = dependency.getFile().getPath();
-      testHelper.installArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion(),
-          dependency.getFile(), new File(path.substring(0, path.length() - 3) + "pom"));
-    }
+    testHelper.installArtifacts(localHelper.getDependencies("io.vertx", "vertx-parent", "pom", "3.0.0-SNAPSHOT"));
+    testHelper.installArtifacts(localHelper.getDependencies("io.vertx", "vertx-core", "jar", "3.0.0-SNAPSHOT"));
 
     // Make sure we have something
     assertTrue(testRepo.exists());

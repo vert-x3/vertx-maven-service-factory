@@ -42,6 +42,18 @@ public class AetherHelper {
     session = newRepositorySystemSession(system, localRepo);
   }
 
+  public void installArtifacts(Iterable<Artifact> artifacts) throws Exception {
+    for (Artifact artifact : artifacts) {
+      installArtifact(artifact);
+    }
+  }
+
+  public void installArtifact(Artifact artifact) throws Exception {
+    String path = artifact.getFile().getPath();
+    installArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+        artifact.getFile(), new File(path.substring(0, path.length() - 3) + "pom"));
+  }
+
   public void installArtifact(String groupId, String artifactId, String version, File jarFile, File pomFile) throws Exception {
     Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, "", "jar", version);
     jarArtifact = jarArtifact.setFile(jarFile);

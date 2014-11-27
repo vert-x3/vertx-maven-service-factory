@@ -18,19 +18,6 @@
     <aether.version>1.0.0.v20140518</aether.version>
   </properties>
 
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-    <license>
-      <name>Eclipse Public License - v 1.0</name>
-      <url>http://www.eclipse.org/legal/epl-v10.html</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
   <dependencies>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -165,6 +152,7 @@
                   <exclude>com.google.code.findbugs:*</exclude>
                 </excludes>
               </artifactSet>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
             </configuration>
           </execution>
         </executions>
