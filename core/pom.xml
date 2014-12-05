@@ -69,12 +69,21 @@
       <artifactId>aether-util</artifactId>
       <version>${aether.version}</version>
     </dependency>
+
+    <!--
+      note :
+        Aether during tests will only create local test repositories, such repository is are created
+        from the local repository (${settings.localRepository}) passed as a system property named
+        localRepository (see surefire config). So we must force some dependencies for the test to execute properly.
+    -->
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
       <version>1.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
+
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
