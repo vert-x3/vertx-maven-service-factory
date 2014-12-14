@@ -16,6 +16,10 @@
   <name>Maven Service Factory - Parent</name>
   <packaging>pom</packaging>
 
+  <properties>
+    <vertx.version>3.0.0-SNAPSHOT</vertx.version>
+  </properties>
+
   <modules>
     <module>test-module</module>
     <module>test-module-dep</module>

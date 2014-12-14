@@ -420,7 +420,7 @@ public class FactoryTest extends VertxTestBase {
     return createMyModuleRepository(
         repoPath,
         new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
-        new File("src" + FILE_SEP + "test" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
     );
   }
 
@@ -428,7 +428,7 @@ public class FactoryTest extends VertxTestBase {
     return createMyModuleRepository(
         repoPath,
         new File(".." + FILE_SEP + "test-module-system-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
-        new File("src" + FILE_SEP + "test" + FILE_SEP + "poms" + FILE_SEP + "test-module-system-dep.xml")
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module-system-dep.xml")
     );
   }
 
@@ -436,7 +436,7 @@ public class FactoryTest extends VertxTestBase {
     return createMyModuleRepository(
         repoPath,
         new File(".." + FILE_SEP + "test-module-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
-        new File("src" + FILE_SEP + "test" + FILE_SEP + "poms" + FILE_SEP + "test-module-dep.xml")
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module-dep.xml")
     );
   }
 
