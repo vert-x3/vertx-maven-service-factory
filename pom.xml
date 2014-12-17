@@ -7,11 +7,11 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>3.0.0-dev_preview1</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>vertx-maven-service-factory-parent</artifactId>
-  <version>3.0.0-dev_preview1</version>
+  <version>3.0.0-SNAPSHOT</version>
 
   <name>Maven Service Factory - Parent</name>
   <packaging>pom</packaging>
