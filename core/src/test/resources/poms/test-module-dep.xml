@@ -9,7 +9,7 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
-      <version>@vertx.version@</version>
+      <version>@project.version@</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
