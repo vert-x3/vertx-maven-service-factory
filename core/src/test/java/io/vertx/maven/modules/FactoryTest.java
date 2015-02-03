@@ -384,7 +384,7 @@ public class FactoryTest extends VertxTestBase {
     vertx.eventBus().localConsumer("mymoduleStopped").handler(message -> latch.countDown());
     vertx.deployVerticle("service:my:module:1.0", res -> {
       assertTrue(res.succeeded());
-      vertx.undeployVerticle(res.result(), res2 -> {
+      vertx.undeploy(res.result(), res2 -> {
         assertTrue(res2.succeeded());
         latch.countDown();
       });
