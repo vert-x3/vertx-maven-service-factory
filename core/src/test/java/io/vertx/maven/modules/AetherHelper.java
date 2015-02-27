@@ -2,6 +2,8 @@ package io.vertx.maven.modules;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositoryEvent;
+import org.eclipse.aether.RepositoryListener;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -11,6 +13,7 @@ import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.installation.InstallRequest;
+import org.eclipse.aether.installation.InstallResult;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -25,6 +28,9 @@ import org.eclipse.aether.util.artifact.SubArtifact;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +41,15 @@ import java.util.List;
 public class AetherHelper {
 
   final RepositorySystem system;
-  final RepositorySystemSession session;
+  final DefaultRepositorySystemSession session;
+
+  public AetherHelper(String localRepo, Writer log) {
+    system = createRepositorySystem();
+    session = newRepositorySystemSession(system, localRepo);
+    if (log != null) {
+      session.setRepositoryListener(new RepositoryTracer(new PrintWriter(log)));
+    }
+  }
 
   public AetherHelper(String localRepo) {
     system = createRepositorySystem();
@@ -61,7 +75,13 @@ public class AetherHelper {
     pomArtifact = pomArtifact.setFile(pomFile);
     InstallRequest installRequest = new InstallRequest();
     installRequest.addArtifact(jarArtifact ).addArtifact( pomArtifact );
-    system.install(session, installRequest);
+    InstallResult result = system.install(session, installRequest);
+    if (!result.getArtifacts().contains(jarArtifact)) {
+      throw new AssertionError("Could not install jar " + jarArtifact);
+    }
+    if (!result.getArtifacts().contains(pomArtifact)) {
+      throw new AssertionError("Could not install pom " + jarArtifact);
+    }
   }
 
   public ArtifactResult resolveArtifact(String groupId, String artifactId, String extension, String version) throws Exception {

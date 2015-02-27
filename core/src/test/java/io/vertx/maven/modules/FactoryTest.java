@@ -6,7 +6,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.maven.MavenVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
-import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.server.Connector;
@@ -25,6 +24,8 @@ import org.junit.Test;
 
 import javax.servlet.DispatcherType;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -440,12 +441,20 @@ public class FactoryTest extends VertxTestBase {
     );
   }
 
+  private File getWorkDir(String path) {
+    return new File("target" + FILE_SEP + path);
+  }
+
+  private File getLogFile(String path) {
+    return new File("target" + FILE_SEP + path);
+  }
+
   private File createMyModuleRepository(String repoPath, File jarFile, File pomFile) throws Exception {
 
     // Create our test repo
-    File testRepo = new File("target" + FILE_SEP + repoPath);
+    File testRepo = getWorkDir(repoPath);
     assertFalse("Repository " + testRepo.getAbsolutePath() + " should not exists", testRepo.exists());
-    AetherHelper testHelper = new AetherHelper(testRepo.getAbsolutePath());
+    AetherHelper testHelper = new AetherHelper(testRepo.getAbsolutePath(), new FileWriter(getLogFile(repoPath + ".log")));
 
     // Install my:module:jar:1.0
     testHelper.installArtifact("my", "module", "1.0", jarFile, pomFile);
