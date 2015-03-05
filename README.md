@@ -21,7 +21,7 @@ The verticle can be deployed programmatically e.g.:
         
 Or can be deployed on the command line with:
   
-    vertx run maven:com.mycompany:clever-db-service:1.0
+    vertx run service:com.mycompany:clever-db-service:1.0
 
 ## Making it available    
     
