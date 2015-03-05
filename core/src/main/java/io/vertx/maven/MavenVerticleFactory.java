@@ -72,7 +72,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   @Override
   public int order() {
     // Order must be higher than ServiceVerticleFactory so ServiceVerticleFactory gets tried first
-    return 1;
+    return super.order() + 1;
   }
 
   @Override
