@@ -140,6 +140,7 @@
               <configuration>
                 <systemPropertyVariables>
                   <localRepository>${settings.localRepository}</localRepository>
+                  <version>${project.version}</version>
                 </systemPropertyVariables>
               </configuration>
             </execution>
