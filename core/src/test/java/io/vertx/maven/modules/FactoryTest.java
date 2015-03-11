@@ -1,6 +1,5 @@
 package io.vertx.maven.modules;
 
-import com.google.common.io.Files;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -28,6 +27,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -115,7 +115,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredResolveFromLocalRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromLocalRepository");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(testRepo, "http://localhost:8080/");
@@ -129,7 +129,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredResolveFromRemoteRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromRemoteRepository");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
@@ -143,7 +143,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredResolveFromSecureRemoteRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromSecureRemoteRepository");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(configureTls(createRemoteServer(testRepo)));
     configureRepos(emptyRepo, "https://localhost:8443/");
@@ -157,7 +157,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredResolveFromRemoteAuthenticatingRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromRemoteAuthenticatingRepository");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     Server server = createRemoteServer(testRepo);
     AuthFilter filter = AuthFilter.serverAuthenticator("username_value", "password_value");
@@ -176,7 +176,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredResolveFromSecureRemoteAuthenticatingRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromSecureRemoteAuthenticatingRepository");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     Server server = createRemoteServer(testRepo);
     AuthFilter filter = AuthFilter.serverAuthenticator("username_value", "password_value");
@@ -193,7 +193,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredHttpProxy() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredHttpProxy");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
@@ -219,7 +219,7 @@ public class FactoryTest extends VertxTestBase {
   // Cannot pass since the ProxyServlet does not support CONNECT and tunneling
   public void testConfiguredHttpsProxy() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredHttpsProxy");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(configureTls(createRemoteServer(testRepo)));
     Server server = new Server(8081);
@@ -244,7 +244,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredAuthenticatingHttpProxy() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredAuthenticatingHttpProxy");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://username_value:password_value@localhost:8081");
@@ -272,7 +272,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testConfiguredHttpProxyFailure() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredHttpProxyFailure");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
@@ -287,7 +287,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testLoadSystemDependencyFromVerticleLoaderWhenAbsent() throws Exception {
     File testRepo = createMyModuleRepositoryWithSystemDep("testLoadSystemDependencyFromVerticleLoaderWhenAbsent");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
@@ -310,7 +310,7 @@ public class FactoryTest extends VertxTestBase {
     Thread.currentThread().setContextClassLoader(loader);
     try {
       File testRepo = createMyModuleRepositoryWithSystemDep("testLoadSystemDependencyFromParentLoaderWhenPresent");
-      File emptyRepo = Files.createTempDir();
+      File emptyRepo = Files.createTempDirectory("vertx").toFile();
       emptyRepo.deleteOnExit();
       startRemoteServer(createRemoteServer(testRepo));
       configureRepos(emptyRepo, "http://localhost:8080/");
@@ -327,7 +327,7 @@ public class FactoryTest extends VertxTestBase {
   @Test
   public void testLoadDependencyFromVerticleLoaderWhenAbsent() throws Exception {
     File testRepo = createMyModuleRepositoryWithDep("testLoadDependencyFromVerticleLoaderWhenAbsent");
-    File emptyRepo = Files.createTempDir();
+    File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
@@ -350,7 +350,7 @@ public class FactoryTest extends VertxTestBase {
     Thread.currentThread().setContextClassLoader(loader);
     try {
       File testRepo = createMyModuleRepositoryWithDep("testLoadDependencyFromVerticleLoaderWhenPresent");
-      File emptyRepo = Files.createTempDir();
+      File emptyRepo = Files.createTempDirectory("vertx").toFile();
       emptyRepo.deleteOnExit();
       startRemoteServer(createRemoteServer(testRepo));
       configureRepos(emptyRepo, "http://localhost:8080/");
