@@ -23,6 +23,22 @@ Or can be deployed on the command line with:
   
     vertx run service:com.mycompany:clever-db-service:1.0
 
+When deploying a service in this way, the Vert.x service factory will use the Aether Maven client to install the Maven
+artifact and its dependencies in your local Maven repository (if they're not already installed).
+
+It then constructs a classpath including all those artifacts and creates a classloader with that classpath in order to
+load the service.
+
+It will look for a service descriptor file on that classpath using the normal service descriptor naming scheme.
+
+So, to summarise. If you invoked:
+
+    vertx.deployVerticle("service:com.mycompany:clever-db-service:1.0", ...)
+
+It would install the Maven artifact `com.mycompany:clever-db-service:1.0` in your local Maven repository and look
+for a service descriptor with name `com.mycompany.clever-db.json`.
+
+
 ## Making it available    
     
 Vert.x picks up `VerticleFactory` implementations from the classpath, so you just need to make sure the`ServiceVerticleFactory`
