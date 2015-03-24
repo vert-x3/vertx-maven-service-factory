@@ -12,7 +12,7 @@ Please see the [`ServiceVerticleFactory`](https://github.com/vert-x3/vertx-servi
 
 This `VerticleFactory` is used in the same way as the `ServiceVerticleFactory`, using the same prefix `service:`
 
-The only difference is that the version number in the service identifier is mandatory as this is needed to resolve the artifact from
+One difference is that the version number in the service identifier is mandatory as this is needed to resolve the artifact from
 Maven properly, e.g.:
 
 The verticle can be deployed programmatically e.g.:
@@ -37,6 +37,20 @@ So, to summarise. If you invoked:
 
 It would install the Maven artifact `com.mycompany:clever-db-service:1.0` in your local Maven repository and look
 for a service descriptor with name `com.mycompany.clever-db.json`.
+
+### More than one service in an artifact
+
+If you have more than one service in a single Maven artifact, then you can specify which one you want to deploy by adding
+a qualifier after the coordinates.
+
+The qualifier is appeneded to the coordinates after two colons: `::`.
+
+For example if the artifact coordinates are `com.mycompany:clever-db-service:1.0`, and that artifact contains two services:
+
+One with a JSON descriptor called `com.mycompany.serviceA.json` and another with `com.mycompany.serviceB.json`, then to
+deploy service A you can specify the identifier as `service:com.mycompany:clever-db-service:1.0::serviceA`, e.g.
+
+    vertx.deployVerticle("ervice:com.mycompany:clever-db-service:1.0::serviceA", ...)
 
 
 ## Making it available    

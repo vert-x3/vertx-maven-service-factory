@@ -78,7 +78,16 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   @Override
   public String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
     RESOLVE_CALLED = true;
-    String coords = VerticleFactory.removePrefix(identifier);
+    String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
+    int pos = identifierNoPrefix.lastIndexOf("::");
+    String coords;
+    String qualifier = null;
+    if (pos != -1) {
+      coords = identifierNoPrefix.substring(0, pos);
+      qualifier = identifierNoPrefix.substring(pos + 2);
+    } else {
+      coords = identifierNoPrefix;
+    }
     ServiceIndentifier serviceID = new ServiceIndentifier(coords);
     if (serviceID.version() == null) {
       throw new IllegalArgumentException("Invalid service identifier, missing version: " + coords);
@@ -180,6 +189,9 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     deploymentOptions.setExtraClasspath(extraCP);
     deploymentOptions.setIsolationGroup("__vertx_maven_" + coords);
     URLClassLoader urlc = new URLClassLoader(urls, classLoader);
+    if (qualifier != null) {
+      identifier = "service:" + serviceID.owner() + ":" + qualifier + ":" + serviceID.version();
+    }
     return super.resolve(identifier, deploymentOptions, urlc);
   }
 
@@ -234,3 +246,4 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   // testing
   public static volatile boolean RESOLVE_CALLED;
 }
+
