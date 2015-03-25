@@ -7,13 +7,7 @@ import io.vertx.maven.MavenVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.jetty.proxy.ProxyServlet;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.SecureRequestCustomizer;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -24,7 +18,6 @@ import org.junit.Test;
 import javax.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -79,8 +72,24 @@ public class FactoryTest extends VertxTestBase {
   public void testStartsOK() throws Exception {
     File testRepo = createMyModuleRepository("testStartsOK");
     configureRepos(testRepo, null);
-    vertx.eventBus().localConsumer("mymodule").handler(message -> testComplete());
+    vertx.eventBus().localConsumer("mymodule").handler(message -> {
+      assertEquals("whatever", message.body());
+      testComplete();
+    });
     vertx.deployVerticle("service:my:module:1.0");
+    await();
+  }
+
+  // Test another service in the same artifact
+  @Test
+  public void testOtherServiceStartsOK() throws Exception {
+    File testRepo = createMyModuleRepository("testOtherServiceStartsOK");
+    configureRepos(testRepo, null);
+    vertx.eventBus().localConsumer("mymodule").handler(message -> {
+      assertEquals("whatever2", message.body());
+      testComplete();
+    });
+    vertx.deployVerticle("service:my:module:1.0::wibble");
     await();
   }
 
