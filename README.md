@@ -1,59 +1,43 @@
 # Maven verticle factory
 
-This `VerticleFactory` implementation behaves very similarly to the [`ServiceVerticleFactory`](https://github.com/vert-x3/vertx-service-factory) implementation.
+This `VerticleFactory` implementation loads a service dynamically from a Maven repository at run-time.
 
-The main difference is that this implementation looks in configured Maven repositories to find the artifact
-corresponding to the service identifier.
-
-Please see the [`ServiceVerticleFactory`](https://github.com/vert-x3/vertx-service-factory) for documentation on
- services.
+It's useful if you don't want to package all your service dependencies at build-time into your application, but would
+rather install and deploy them dynamically at run-time when they are requested.
 
 ## Usage
 
-This `VerticleFactory` is used in the same way as the `ServiceVerticleFactory`, using the same prefix `service:`
+This `VerticleFactory` uses the prefix `maven:` to select it when deploying services.
 
-One difference is that the version number in the service identifier is mandatory as this is needed to resolve the artifact from
-Maven properly, e.g.:
+The service identifier is made up of the Maven co-ordinates of the artifact that contains the
+service, e.g. `com.mycompany:main-services:1.2` followed by a double colon `::` followed by the service name.
 
-The verticle can be deployed programmatically e.g.:
+The service name is used to find the service descriptor file inside the artifact which is named by the service name with
+a `.json` extension. This is explained in the link:https://github.com/vert-x3/vertx-service-factory[Service Verticle Factory]
+documentation.
+
+For example, to deploy a service that exists in Maven artifact `com.mycompany:main-services:1.2` called `my-service` you
+would use the string `maven:com.mycompany:main-services:1.2::my-service`.
+
+Given this string, the verticle factory will use the Aether client try and locate the artifact `com.mycompany:main-services:1.2`
+and all its dependencies in the configured Maven repositories and download and install it locally if it's not already installed.
+
+It then constructs a classpath including all those artifacts and creates a classloader with that classpath in order to
+load the service using the standard link:https://github.com/vert-x3/vertx-service-factory[Service Verticle Factory].
+
+The Service Verticle Factory will look for a descriptor file called `my-service.json` on the constructed classpath to
+actually load the service.
+
+Given a service identifier the service can be deployed programmatically e.g.:
     
-    vertx.deployVerticle("service:com.mycompany:clever-db-service:1.0", ...)
+    vertx.deployVerticle("maven:com.mycompany:main-services:1.2::my-service", ...)
         
 Or can be deployed on the command line with:
   
-    vertx run service:com.mycompany:clever-db-service:1.0
-
-When deploying a service in this way, the Vert.x service factory will use the Aether Maven client to install the Maven
-artifact and its dependencies in your local Maven repository (if they're not already installed).
-
-It then constructs a classpath including all those artifacts and creates a classloader with that classpath in order to
-load the service.
-
-It will look for a service descriptor file on that classpath using the normal service descriptor naming scheme.
-
-So, to summarise. If you invoked:
-
-    vertx.deployVerticle("service:com.mycompany:clever-db-service:1.0", ...)
-
-It would install the Maven artifact `com.mycompany:clever-db-service:1.0` in your local Maven repository and look
-for a service descriptor with name `com.mycompany.clever-db.json`.
-
-### More than one service in an artifact
-
-If you have more than one service in a single Maven artifact, then you can specify which one you want to deploy by adding
-a qualifier after the coordinates.
-
-The qualifier is appeneded to the coordinates after two colons: `::`.
-
-For example if the artifact coordinates are `com.mycompany:clever-db-service:1.0`, and that artifact contains two services:
-
-One with a JSON descriptor called `com.mycompany.serviceA.json` and another with `com.mycompany.serviceB.json`, then to
-deploy service A you can specify the identifier as `service:com.mycompany:clever-db-service:1.0::serviceA`, e.g.
-
-    vertx.deployVerticle("ervice:com.mycompany:clever-db-service:1.0::serviceA", ...)
+    vertx run maven:com.mycompany:main-services:1.2::my-service
 
 
-## Making it available    
+## Making it available
     
 Vert.x picks up `VerticleFactory` implementations from the classpath, so you just need to make sure the`ServiceVerticleFactory`
  jar is on the classpath.
@@ -64,7 +48,7 @@ If you are running embedded you can declare a Maven dependency to it in your pom
 
     <dependency>
       <groupId>io.vertx</groupId>
-      <artifactId>vertx-maven-modules</artifactId>
+      <artifactId>vertx-maven-service-factory</artifactId>
       <version>3.0.0</version>
     </dependency>
     

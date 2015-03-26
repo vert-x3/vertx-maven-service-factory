@@ -1,9 +1,7 @@
 package io.vertx.maven;
 
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.VertxException;
 import io.vertx.core.spi.VerticleFactory;
-import io.vertx.service.ServiceIndentifier;
 import io.vertx.service.ServiceVerticleFactory;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -70,9 +68,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   }
 
   @Override
-  public int order() {
-    // Order must be higher than ServiceVerticleFactory so ServiceVerticleFactory gets tried first
-    return super.order() + 1;
+  public String prefix() {
+    return "maven";
   }
 
   @Override
@@ -80,17 +77,14 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     RESOLVE_CALLED = true;
     String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
     int pos = identifierNoPrefix.lastIndexOf("::");
-    String coords;
-    String qualifier = null;
-    if (pos != -1) {
-      coords = identifierNoPrefix.substring(0, pos);
-      qualifier = identifierNoPrefix.substring(pos + 2);
-    } else {
-      coords = identifierNoPrefix;
+    if (pos == -1) {
+      throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
     }
-    ServiceIndentifier serviceID = new ServiceIndentifier(coords);
-    if (serviceID.version() == null) {
-      throw new IllegalArgumentException("Invalid service identifier, missing version: " + coords);
+    String coordsString = identifierNoPrefix.substring(0, pos);
+    String serviceName = identifierNoPrefix.substring(pos + 2);
+    MavenCoords coords = new MavenCoords(coordsString);
+    if (coords.version() == null) {
+      throw new IllegalArgumentException("Invalid service identifier, missing version: " + coordsString);
     }
     DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
     locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
@@ -149,7 +143,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       remotes.add(remoteRepo);
     }
 
-    Artifact artifact = new DefaultArtifact(coords);
+    Artifact artifact = new DefaultArtifact(coordsString);
     DependencyFilter classpathFlter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
     CollectRequest collectRequest = new CollectRequest();
     collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
@@ -162,10 +156,10 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       artifactResults =
         system.resolveDependencies(session, dependencyRequest).getArtifactResults();
     } catch (DependencyResolutionException e) {
-      throw new VertxException("Cannot find module " + coords + " in maven repositories");
+      throw new IllegalArgumentException("Cannot find module " + coordsString + " in maven repositories");
     } catch (NullPointerException e) {
       // Sucks, but aether throws a NPE if repository name is invalid....
-      throw new VertxException("Cannot find module " + coords + ". Maybe repository URL is invalid?");
+      throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");
     }
 
     // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
@@ -187,12 +181,9 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       }
     }
     deploymentOptions.setExtraClasspath(extraCP);
-    deploymentOptions.setIsolationGroup("__vertx_maven_" + coords);
+    deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
     URLClassLoader urlc = new URLClassLoader(urls, classLoader);
-    if (qualifier != null) {
-      identifier = "service:" + serviceID.owner() + ":" + qualifier + ":" + serviceID.version();
-    }
-    return super.resolve(identifier, deploymentOptions, urlc);
+    return super.resolve("service:" + serviceName, deploymentOptions, urlc);
   }
 
   public String getLocalMavenRepo() {
