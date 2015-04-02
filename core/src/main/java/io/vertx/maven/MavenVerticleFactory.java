@@ -35,6 +35,9 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 /**
@@ -76,12 +79,13 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   public String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
     RESOLVE_CALLED = true;
     String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
+    String coordsString = identifierNoPrefix;
+    String serviceName = null;
     int pos = identifierNoPrefix.lastIndexOf("::");
-    if (pos == -1) {
-      throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
+    if (pos != -1) {
+      coordsString = identifierNoPrefix.substring(0, pos);
+      serviceName = identifierNoPrefix.substring(pos + 2);
     }
-    String coordsString = identifierNoPrefix.substring(0, pos);
-    String serviceName = identifierNoPrefix.substring(pos + 2);
     MavenCoords coords = new MavenCoords(coordsString);
     if (coords.version() == null) {
       throw new IllegalArgumentException("Invalid service identifier, missing version: " + coordsString);
@@ -162,6 +166,26 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");
     }
 
+    // When service name is null we look at the Main-Verticle in META-INF/MANIFEST.MF
+    String serviceIdentifer = null;
+    if (serviceName != null) {
+      serviceIdentifer = "service:" + serviceName;
+    } else {
+      for (ArtifactResult result : artifactResults) {
+        if (result.getArtifact().getGroupId().equals(coords.owner()) && result.getArtifact().getArtifactId().equals(coords.serviceName())) {
+          File file = result.getArtifact().getFile();
+          JarFile jarFile = new JarFile(file);
+          Manifest manifest = jarFile.getManifest();
+          if (manifest != null) {
+            serviceIdentifer = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
+          }
+        }
+      }
+      if (serviceIdentifer == null) {
+        throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
+      }
+    }
+
     // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
     // then we don't add it to the classpath for the module
     List<String> classpath = artifactResults.stream().
@@ -183,7 +207,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     deploymentOptions.setExtraClasspath(extraCP);
     deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
     URLClassLoader urlc = new URLClassLoader(urls, classLoader);
-    return super.resolve("service:" + serviceName, deploymentOptions, urlc);
+    return super.resolve(serviceIdentifer, deploymentOptions, urlc);
   }
 
   public String getLocalMavenRepo() {

@@ -34,6 +34,7 @@
 
   <modules>
     <module>test-module</module>
+    <module>test-module-main-verticle</module>
     <module>test-module-dep</module>
     <module>test-module-system-dep</module>
     <module>core</module>

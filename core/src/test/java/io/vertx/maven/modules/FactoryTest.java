@@ -79,6 +79,18 @@ public class FactoryTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testUseMainVerticleFromManifest() throws Exception {
+    File testRepo = createMyModuleMainVerticleRepository("testUseMainVerticleFromManifest");
+    configureRepos(testRepo, null);
+    vertx.eventBus().localConsumer("mymodule").handler(message -> {
+      assertEquals("whatever", message.body());
+      testComplete();
+    });
+    vertx.deployVerticle("maven:my:module:1.0");
+    await();
+  }
+
   // Test another service in the same artifact
   @Test
   public void testOtherServiceStartsOK() throws Exception {
@@ -387,6 +399,8 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testNoServiceName() throws Exception {
+    File testRepo = createMyModuleRepository("testNoServiceName");
+    configureRepos(testRepo, null);
     vertx.deployVerticle("maven:my:module:1.0", res -> {
       assertTrue(res.failed());
       assertTrue(res.cause() instanceof IllegalArgumentException);
@@ -450,6 +464,14 @@ public class FactoryTest extends VertxTestBase {
         repoPath,
         new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
+    );
+  }
+
+  private File createMyModuleMainVerticleRepository(String repoPath) throws Exception {
+    return createMyModuleRepository(
+        repoPath,
+        new File(".." + FILE_SEP + "test-module-main-verticle" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module-main-verticle.xml")
     );
   }
 

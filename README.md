@@ -36,6 +36,14 @@ Or can be deployed on the command line with:
   
     vertx run maven:com.mycompany:main-services:1.2::my-service
 
+The service name can be omitted when the service jar _META-INF/MANIFEST_ contains a `Main-Verticle` entry that
+declares the verticle to run
+
+    vertx.deployVerticle("maven:com.mycompany:main-services:1.2", ...)
+
+And the manifest contains:
+
+    Main-Verticle: service:my.service
 
 ## Making it available
     
