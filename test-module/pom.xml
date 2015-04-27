@@ -32,6 +32,21 @@
           <skip>true</skip>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <descriptor>src/main/assembly/zip.xml</descriptor>
+              <appendAssemblyId>false</appendAssemblyId>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Build the module jar in process-classes phase instead of package so it will be
            available in the test phase -->
       <plugin>
@@ -40,6 +55,12 @@
           <execution>
             <id>default-jar</id>
             <phase>process-classes</phase>
+            <configuration>
+              <excludes>
+                <exclude>io/vertx/mymodule/MyVerticleZip.class</exclude>
+                <exclude>my.serviceZip.json</exclude>
+              </excludes>
+            </configuration>
           </execution>
         </executions>
       </plugin>

@@ -148,12 +148,12 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     }
 
     Artifact artifact = new DefaultArtifact(coordsString);
-    DependencyFilter classpathFlter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
+    DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
     CollectRequest collectRequest = new CollectRequest();
     collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
     collectRequest.setRepositories(remotes);
 
-    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFlter);
+    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
 
     List<ArtifactResult> artifactResults;
     try {

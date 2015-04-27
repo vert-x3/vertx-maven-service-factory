@@ -68,9 +68,10 @@ public class AetherHelper {
         artifact.getFile(), new File(path.substring(0, path.length() - 3) + "pom"));
   }
 
-  public void installArtifact(String groupId, String artifactId, String version, File jarFile, File pomFile) throws Exception {
-    Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, "", "jar", version);
-    jarArtifact = jarArtifact.setFile(jarFile);
+  public void installArtifact(String groupId, String artifactId, String version, File artifactFile, File pomFile) throws Exception {
+    String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf('.') + 1);
+    Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, "", extension, version);
+    jarArtifact = jarArtifact.setFile(artifactFile);
     Artifact pomArtifact = new SubArtifact(jarArtifact, "", "pom");
     pomArtifact = pomArtifact.setFile(pomFile);
     InstallRequest installRequest = new InstallRequest();
