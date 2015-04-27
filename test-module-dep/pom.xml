@@ -29,6 +29,7 @@
   <build>
     <finalName>mymodule</finalName>
     <plugins>
+      <!-- We don't need to deploy this artifact for real as it's used for testing -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
