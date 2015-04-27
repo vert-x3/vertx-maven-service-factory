@@ -32,6 +32,7 @@
           <skip>true</skip>
         </configuration>
       </plugin>
+      <!-- Extension and classifier packagings -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
@@ -41,8 +42,10 @@
             </goals>
             <phase>process-classes</phase>
             <configuration>
-              <descriptor>src/main/assembly/zip.xml</descriptor>
-              <appendAssemblyId>false</appendAssemblyId>
+              <descriptors>
+                <descriptor>src/main/assembly/zip.xml</descriptor>
+                <descriptor>src/main/assembly/classifier.xml</descriptor>
+              </descriptors>
             </configuration>
           </execution>
         </executions>
@@ -56,10 +59,12 @@
             <id>default-jar</id>
             <phase>process-classes</phase>
             <configuration>
-              <excludes>
-                <exclude>io/vertx/mymodule/MyVerticleZip.class</exclude>
-                <exclude>my.serviceZip.json</exclude>
-              </excludes>
+              <includes>
+                <include>io/vertx/mymodule/MyVerticle.class</include>
+                <include>io/vertx/mymodule/MyVerticle2.class</include>
+                <exclude>my.serviceA.json</exclude>
+                <exclude>my.serviceB.json</exclude>
+              </includes>
             </configuration>
           </execution>
         </executions>

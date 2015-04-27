@@ -122,6 +122,23 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testClassifier() throws Exception {
+    File testRepo = createMyModuleClassifierRepository("testClassifier");
+    configureRepos(testRepo, null);
+    vertx.eventBus().localConsumer("mymodule").handler(message -> {
+      assertEquals("whateverClassifier", message.body());
+      testComplete();
+    });
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", ar1 -> {
+      assertTrue(ar1.failed());
+      vertx.deployVerticle("maven:my:module:jar:the_classifier:1.0::my.serviceClassifier", ar2 -> {
+        assertTrue(ar2.succeeded());
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testConfiguredResolveFromLocalRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromLocalRepository");
     File emptyRepo = Files.createTempDirectory("vertx").toFile();
@@ -488,6 +505,14 @@ public class FactoryTest extends VertxTestBase {
     return createMyModuleRepository(
         repoPath,
         new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.zip"),
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
+    );
+  }
+
+  private File createMyModuleClassifierRepository(String repoPath) throws Exception {
+    return createMyModuleRepository(
+        repoPath,
+        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule-the_classifier.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
     );
   }

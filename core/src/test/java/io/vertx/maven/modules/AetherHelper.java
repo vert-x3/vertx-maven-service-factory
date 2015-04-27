@@ -64,13 +64,30 @@ public class AetherHelper {
 
   public void installArtifact(Artifact artifact) throws Exception {
     String path = artifact.getFile().getPath();
-    installArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
-        artifact.getFile(), new File(path.substring(0, path.length() - 3) + "pom"));
+    installArtifact(
+        artifact.getGroupId(),
+        artifact.getArtifactId(),
+        artifact.getExtension(),
+        artifact.getClassifier(),
+        artifact.getVersion(),
+        artifact.getFile(),
+        new File(path.substring(0, path.length() - 3) + "pom"));
   }
 
   public void installArtifact(String groupId, String artifactId, String version, File artifactFile, File pomFile) throws Exception {
-    String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf('.') + 1);
-    Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, "", extension, version);
+    int extIndex = artifactFile.getName().lastIndexOf('.');
+    String ext = artifactFile.getName().substring(extIndex + 1);
+    String rawName = artifactFile.getName().substring(0, extIndex);
+    int classifierIdx = rawName.lastIndexOf('-');
+    String classifier = "";
+    if (classifierIdx != -1) {
+      classifier = rawName.substring(classifierIdx + 1, rawName.length());
+    }
+    installArtifact(groupId, artifactId, ext, classifier, version, artifactFile, pomFile);
+  }
+
+  public void installArtifact(String groupId, String artifactId, String ext, String classifier, String version, File artifactFile, File pomFile) throws Exception {
+    Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, classifier, ext, version);
     jarArtifact = jarArtifact.setFile(artifactFile);
     Artifact pomArtifact = new SubArtifact(jarArtifact, "", "pom");
     pomArtifact = pomArtifact.setFile(pomFile);
