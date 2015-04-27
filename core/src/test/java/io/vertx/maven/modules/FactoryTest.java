@@ -105,6 +105,40 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testZipExtension() throws Exception {
+    File testRepo = createMyModuleZipRepository("testZipExtension");
+    configureRepos(testRepo, null);
+    vertx.eventBus().localConsumer("mymodule").handler(message -> {
+      assertEquals("whateverZip", message.body());
+      testComplete();
+    });
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", ar1 -> {
+      assertTrue(ar1.failed());
+      vertx.deployVerticle("maven:my:module:zip:1.0::my.serviceZip", ar2 -> {
+        assertTrue(ar2.succeeded());
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testClassifier() throws Exception {
+    File testRepo = createMyModuleClassifierRepository("testClassifier");
+    configureRepos(testRepo, null);
+    vertx.eventBus().localConsumer("mymodule").handler(message -> {
+      assertEquals("whateverClassifier", message.body());
+      testComplete();
+    });
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", ar1 -> {
+      assertTrue(ar1.failed());
+      vertx.deployVerticle("maven:my:module:jar:the_classifier:1.0::my.serviceClassifier", ar2 -> {
+        assertTrue(ar2.succeeded());
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testConfiguredResolveFromLocalRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromLocalRepository");
     File emptyRepo = Files.createTempDirectory("vertx").toFile();
@@ -440,7 +474,7 @@ public class FactoryTest extends VertxTestBase {
     vertx.deployVerticle("maven:uhiuhuih::my.wibble", res -> {
       assertTrue(res.failed());
       assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Invalid service identifier"));
+      assertTrue(res.cause().getMessage().startsWith("Invalid maven coordinates:"));
       testComplete();
     });
     await();
@@ -463,6 +497,22 @@ public class FactoryTest extends VertxTestBase {
     return createMyModuleRepository(
         repoPath,
         new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
+    );
+  }
+
+  private File createMyModuleZipRepository(String repoPath) throws Exception {
+    return createMyModuleRepository(
+        repoPath,
+        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.zip"),
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
+    );
+  }
+
+  private File createMyModuleClassifierRepository(String repoPath) throws Exception {
+    return createMyModuleRepository(
+        repoPath,
+        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule-the_classifier.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
     );
   }
@@ -499,7 +549,7 @@ public class FactoryTest extends VertxTestBase {
     return new File("target" + FILE_SEP + path);
   }
 
-  private File createMyModuleRepository(String repoPath, File jarFile, File pomFile) throws Exception {
+  private File createMyModuleRepository(String repoPath, File artifactFile, File pomFile) throws Exception {
 
     // Create our test repo
     File testRepo = getWorkDir(repoPath);
@@ -507,7 +557,7 @@ public class FactoryTest extends VertxTestBase {
     AetherHelper testHelper = new AetherHelper(testRepo.getAbsolutePath(), new FileWriter(getLogFile(repoPath + ".log")));
 
     // Install my:module:jar:1.0
-    testHelper.installArtifact("my", "module", "1.0", jarFile, pomFile);
+    testHelper.installArtifact("my", "module", "1.0", artifactFile, pomFile);
 
     // Resolve all the dependencies of vertx-core we need from the local repository
     // and install them in the test repo

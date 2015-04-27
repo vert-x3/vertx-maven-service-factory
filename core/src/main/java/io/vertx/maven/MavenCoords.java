@@ -23,22 +23,42 @@ public class MavenCoords {
 
   private final String owner;
   private final String serviceName;
+  private final String extension;
+  private final String classifier;
   private final String version;
 
-  public MavenCoords(String owner, String serviceName, String version) {
+  public MavenCoords(String owner, String serviceName, String extension, String classifier, String version) {
     this.owner = owner;
     this.serviceName = serviceName;
+    this.extension = extension;
+    this.classifier = classifier;
     this.version = version;
   }
 
   public MavenCoords(String idString) {
     String[] split = idString.split(":");
-    if (split.length != 2 && split.length != 3) {
-      throw new IllegalArgumentException("Invalid service identifier: " + idString);
+    if (split.length != 2 && split.length != 3 && split.length != 4 && split.length != 5) {
+      throw new IllegalArgumentException("Invalid maven coordinates: " + idString);
     }
     owner = split[0];
     serviceName = split[1];
-    version = split.length == 3 ? split[2] : null;
+    if (split.length == 3) {
+      extension = null;
+      classifier = null;
+      version = split[2];
+    } else if (split.length == 4) {
+      extension = split[2];
+      classifier = null;
+      version = split[3];
+    } else if (split.length == 5) {
+      extension = split[2];
+      classifier = split[3];
+      version = split[4];
+    } else {
+      extension = null;
+      classifier = null;
+      version = null;
+    }
   }
 
   public String owner() {
@@ -47,6 +67,14 @@ public class MavenCoords {
 
   public String serviceName() {
     return serviceName;
+  }
+
+  public String extension() {
+    return extension;
+  }
+
+  public String classifier() {
+    return classifier;
   }
 
   public String version() {

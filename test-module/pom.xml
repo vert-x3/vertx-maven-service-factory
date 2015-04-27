@@ -32,6 +32,24 @@
           <skip>true</skip>
         </configuration>
       </plugin>
+      <!-- Extension and classifier packagings -->
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <descriptors>
+                <descriptor>src/main/assembly/zip.xml</descriptor>
+                <descriptor>src/main/assembly/classifier.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Build the module jar in process-classes phase instead of package so it will be
            available in the test phase -->
       <plugin>
@@ -40,6 +58,14 @@
           <execution>
             <id>default-jar</id>
             <phase>process-classes</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/mymodule/MyVerticle.class</include>
+                <include>io/vertx/mymodule/MyVerticle2.class</include>
+                <exclude>my.serviceA.json</exclude>
+                <exclude>my.serviceB.json</exclude>
+              </includes>
+            </configuration>
           </execution>
         </executions>
       </plugin>
