@@ -1,6 +1,8 @@
 package io.vertx.maven;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.service.ServiceVerticleFactory;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -60,6 +62,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   private List<String> remoteMavenRepos;
   private String httpProxy;
   private String httpsProxy;
+  private Vertx vertx;
 
   public MavenVerticleFactory() {
     localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
@@ -71,143 +74,158 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   }
 
   @Override
+  public void init(Vertx vertx) {
+    this.vertx = vertx;
+  }
+
+  @Override
   public String prefix() {
     return "maven";
   }
 
   @Override
-  public String resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader) throws Exception {
+  public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
     RESOLVE_CALLED = true;
-    String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
-    String coordsString = identifierNoPrefix;
-    String serviceName = null;
-    int pos = identifierNoPrefix.lastIndexOf("::");
-    if (pos != -1) {
-      coordsString = identifierNoPrefix.substring(0, pos);
-      serviceName = identifierNoPrefix.substring(pos + 2);
-    }
-    MavenCoords coords = new MavenCoords(coordsString);
-    if (coords.version() == null) {
-      throw new IllegalArgumentException("Invalid service identifier, missing version: " + coordsString);
-    }
-    DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-    locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-    locator.addService(TransporterFactory.class, FileTransporterFactory.class);
-    locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-    locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-      @Override
-      public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-        exception.printStackTrace();
-      }
-    });
-    RepositorySystem system = locator.getService(RepositorySystem.class);
-    DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-    Proxy proxy = null;
-    if (httpProxy != null) {
-      URL url = new URL(httpProxy);
-      Authentication authentication = extractAuth(url);
-      proxy = new Proxy("http", url.getHost(), url.getPort(), authentication);
-    }
-    Proxy secureProxy = null;
-    if (httpsProxy != null) {
-      URL url = new URL(httpsProxy);
-      Authentication authentication = extractAuth(url);
-      secureProxy = new Proxy("https", url.getHost(), url.getPort(), authentication);
-    }
-
-    LocalRepository localRepo = new LocalRepository(localMavenRepo);
-    session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-    int count = 0;
-    List<RemoteRepository> remotes = new ArrayList<>();
-    for (String remote: remoteMavenRepos) {
-      URL url = new URL(remote);
-      Authentication auth = extractAuth(url);
-      if (auth != null) {
-        url = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile());
-      }
-      RemoteRepository.Builder builder = new RemoteRepository.Builder("repo" + (count++), "default", url.toString());
-      if (auth != null) {
-        builder.setAuthentication(auth);
-      }
-      switch (url.getProtocol()) {
-        case "http":
-          if (proxy != null) {
-            builder.setProxy(proxy);
+    vertx.<Void>executeBlocking(fut -> {
+      try {
+        String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
+        String coordsString = identifierNoPrefix;
+        String serviceName = null;
+        int pos = identifierNoPrefix.lastIndexOf("::");
+        if (pos != -1) {
+          coordsString = identifierNoPrefix.substring(0, pos);
+          serviceName = identifierNoPrefix.substring(pos + 2);
+        }
+        MavenCoords coords = new MavenCoords(coordsString);
+        if (coords.version() == null) {
+          throw new IllegalArgumentException("Invalid service identifier, missing version: " + coordsString);
+        }
+        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
+        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
+        locator.addService(TransporterFactory.class, FileTransporterFactory.class);
+        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
+        locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
+          @Override
+          public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
+            exception.printStackTrace();
           }
-          break;
-        case "https":
-          if (secureProxy != null) {
-            builder.setProxy(secureProxy);
+        });
+        RepositorySystem system = locator.getService(RepositorySystem.class);
+        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
+
+        Proxy proxy = null;
+        if (httpProxy != null) {
+          URL url = new URL(httpProxy);
+          Authentication authentication = extractAuth(url);
+          proxy = new Proxy("http", url.getHost(), url.getPort(), authentication);
+        }
+        Proxy secureProxy = null;
+        if (httpsProxy != null) {
+          URL url = new URL(httpsProxy);
+          Authentication authentication = extractAuth(url);
+          secureProxy = new Proxy("https", url.getHost(), url.getPort(), authentication);
+        }
+
+        LocalRepository localRepo = new LocalRepository(localMavenRepo);
+        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
+
+        int count = 0;
+        List<RemoteRepository> remotes = new ArrayList<>();
+        for (String remote: remoteMavenRepos) {
+          URL url = new URL(remote);
+          Authentication auth = extractAuth(url);
+          if (auth != null) {
+            url = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile());
           }
-          break;
-      }
-      RemoteRepository remoteRepo = builder.build();
-      remotes.add(remoteRepo);
-    }
+          RemoteRepository.Builder builder = new RemoteRepository.Builder("repo" + (count++), "default", url.toString());
+          if (auth != null) {
+            builder.setAuthentication(auth);
+          }
+          switch (url.getProtocol()) {
+            case "http":
+              if (proxy != null) {
+                builder.setProxy(proxy);
+              }
+              break;
+            case "https":
+              if (secureProxy != null) {
+                builder.setProxy(secureProxy);
+              }
+              break;
+          }
+          RemoteRepository remoteRepo = builder.build();
+          remotes.add(remoteRepo);
+        }
 
-    Artifact artifact = new DefaultArtifact(coordsString);
-    DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
-    CollectRequest collectRequest = new CollectRequest();
-    collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
-    collectRequest.setRepositories(remotes);
+        Artifact artifact = new DefaultArtifact(coordsString);
+        DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
+        CollectRequest collectRequest = new CollectRequest();
+        collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
+        collectRequest.setRepositories(remotes);
 
-    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
+        DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
 
-    List<ArtifactResult> artifactResults;
-    try {
-      artifactResults =
-        system.resolveDependencies(session, dependencyRequest).getArtifactResults();
-    } catch (DependencyResolutionException e) {
-      throw new IllegalArgumentException("Cannot find module " + coordsString + " in maven repositories");
-    } catch (NullPointerException e) {
-      // Sucks, but aether throws a NPE if repository name is invalid....
-      throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");
-    }
+        List<ArtifactResult> artifactResults;
+        try {
+          artifactResults =
+              system.resolveDependencies(session, dependencyRequest).getArtifactResults();
+        } catch (DependencyResolutionException e) {
+          throw new IllegalArgumentException("Cannot find module " + coordsString + " in maven repositories");
+        } catch (NullPointerException e) {
+          // Sucks, but aether throws a NPE if repository name is invalid....
+          throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");
+        }
 
-    // When service name is null we look at the Main-Verticle in META-INF/MANIFEST.MF
-    String serviceIdentifer = null;
-    if (serviceName != null) {
-      serviceIdentifer = "service:" + serviceName;
-    } else {
-      for (ArtifactResult result : artifactResults) {
-        if (result.getArtifact().getGroupId().equals(coords.owner()) && result.getArtifact().getArtifactId().equals(coords.serviceName())) {
-          File file = result.getArtifact().getFile();
-          JarFile jarFile = new JarFile(file);
-          Manifest manifest = jarFile.getManifest();
-          if (manifest != null) {
-            serviceIdentifer = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
+        // When service name is null we look at the Main-Verticle in META-INF/MANIFEST.MF
+        String serviceIdentifer = null;
+        if (serviceName != null) {
+          serviceIdentifer = "service:" + serviceName;
+        } else {
+          for (ArtifactResult result : artifactResults) {
+            if (result.getArtifact().getGroupId().equals(coords.owner()) && result.getArtifact().getArtifactId().equals(coords.serviceName())) {
+              File file = result.getArtifact().getFile();
+              JarFile jarFile = new JarFile(file);
+              Manifest manifest = jarFile.getManifest();
+              if (manifest != null) {
+                serviceIdentifer = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
+              }
+            }
+          }
+          if (serviceIdentifer == null) {
+            throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
           }
         }
-      }
-      if (serviceIdentifer == null) {
-        throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
-      }
-    }
 
-    // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
-    // then we don't add it to the classpath for the module
-    List<String> classpath = artifactResults.stream().
-        map(res -> res.getArtifact().getFile().getAbsolutePath()).
-        collect(Collectors.toList());
-    URL[] urls = new URL[classpath.size()];
-    int index = 0;
-    List<String> extraCP = new ArrayList<>(urls.length);
-    for (String pathElement: classpath) {
-      File file = new File(pathElement);
-      extraCP.add(file.getAbsolutePath());
-      try {
-        URL url = file.toURI().toURL();
-        urls[index++] = url;
-      } catch (MalformedURLException e) {
-        throw new IllegalStateException(e);
+        // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
+        // then we don't add it to the classpath for the module
+        List<String> classpath = artifactResults.stream().
+            map(res -> res.getArtifact().getFile().getAbsolutePath()).
+            collect(Collectors.toList());
+        URL[] urls = new URL[classpath.size()];
+        int index = 0;
+        List<String> extraCP = new ArrayList<>(urls.length);
+        for (String pathElement: classpath) {
+          File file = new File(pathElement);
+          extraCP.add(file.getAbsolutePath());
+          try {
+            URL url = file.toURI().toURL();
+            urls[index++] = url;
+          } catch (MalformedURLException e) {
+            throw new IllegalStateException(e);
+          }
+        }
+        deploymentOptions.setExtraClasspath(extraCP);
+        deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
+        URLClassLoader urlc = new URLClassLoader(urls, classLoader);
+
+        super.resolve(serviceIdentifer, deploymentOptions, urlc, resolution);
+        fut.complete();
+      } catch (Exception e) {
+        fut.fail(e);
+        resolution.fail(e);
       }
-    }
-    deploymentOptions.setExtraClasspath(extraCP);
-    deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
-    URLClassLoader urlc = new URLClassLoader(urls, classLoader);
-    return super.resolve(serviceIdentifer, deploymentOptions, urlc);
+    }, ar -> {
+    });
   }
 
   public String getLocalMavenRepo() {
