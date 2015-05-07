@@ -11,13 +11,13 @@
   </parent>
 
   <artifactId>vertx-maven-service-factory-parent</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.0.0-milestone5</version>
 
   <name>Maven Service Factory - Parent</name>
   <packaging>pom</packaging>
 
   <properties>
-    <stack.version>3.0.0-SNAPSHOT</stack.version>
+    <stack.version>3.0.0-milestone5</stack.version>
   </properties>
 
   <dependencyManagement>
