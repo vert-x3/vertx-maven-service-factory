@@ -15,10 +15,7 @@ import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.Authentication;
-import org.eclipse.aether.repository.LocalRepository;
-import org.eclipse.aether.repository.Proxy;
-import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.*;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
@@ -51,6 +48,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
   public static final String HTTP_PROXY_SYS_PROP = "vertx.maven.httpProxy";
   public static final String HTTPS_PROXY_SYS_PROP = "vertx.maven.httpsProxy";
+  public static final String REMOTE_SNAPSHOT_POLICY_SYS_PROP = "vertx.maven.remoteSnapshotPolicy";
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
@@ -153,6 +151,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
               }
               break;
           }
+          customizeRemoteRepoBuilder(builder);
           RemoteRepository remoteRepo = builder.build();
           remotes.add(remoteRepo);
         }
@@ -226,6 +225,13 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
       }
     }, ar -> {
     });
+  }
+
+  protected void customizeRemoteRepoBuilder(RemoteRepository.Builder builder) {
+    String updatePolicy = System.getProperty(REMOTE_SNAPSHOT_POLICY_SYS_PROP);
+    if (updatePolicy != null && !updatePolicy.isEmpty()) {
+      builder.setSnapshotPolicy(new RepositoryPolicy(true, updatePolicy, RepositoryPolicy.CHECKSUM_POLICY_WARN));
+    }
   }
 
   public String getLocalMavenRepo() {
