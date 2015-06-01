@@ -1,5 +1,7 @@
 # Maven verticle factory
 
+[![Build Status](https://vertx.ci.cloudbees.com/buildStatus/icon?job=vert.x3-maven-service-factory)](https://vertx.ci.cloudbees.com/view/vert.x-3/job/vert.x3-maven-service-factory/)
+
 This `VerticleFactory` implementation loads a service dynamically from a Maven repository at run-time.
 
 It's useful if you don't want to package all your service dependencies at build-time into your application, but would
