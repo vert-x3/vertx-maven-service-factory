@@ -15,8 +15,7 @@ The service identifier is made up of the Maven co-ordinates of the artifact that
 service, e.g. `com.mycompany:main-services:1.2` followed by a double colon `::` followed by the service name.
 
 The service name is used to find the service descriptor file inside the artifact which is named by the service name with
-a `.json` extension. This is explained in the link:https://github.com/vert-x3/vertx-service-factory[Service Verticle Factory]
-documentation.
+a `.json` extension. This is explained in the [Service Verticle Factory](https://github.com/vert-x3/vertx-service-factory) documentation.
 
 For example, to deploy a service that exists in Maven artifact `com.mycompany:main-services:1.2` called `my-service` you
 would use the string `maven:com.mycompany:main-services:1.2::my-service`.
@@ -25,7 +24,7 @@ Given this string, the verticle factory will use the Aether client try and locat
 and all its dependencies in the configured Maven repositories and download and install it locally if it's not already installed.
 
 It then constructs a classpath including all those artifacts and creates a classloader with that classpath in order to
-load the service using the standard link:https://github.com/vert-x3/vertx-service-factory[Service Verticle Factory].
+load the service using the standard [Service Verticle Factory](https://github.com/vert-x3/vertx-service-factory).
 
 The Service Verticle Factory will look for a descriptor file called `my-service.json` on the constructed classpath to
 actually load the service.
