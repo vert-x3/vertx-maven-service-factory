@@ -170,7 +170,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
           artifactResults =
               system.resolveDependencies(session, dependencyRequest).getArtifactResults();
         } catch (DependencyResolutionException e) {
-          throw new IllegalArgumentException("Cannot find module " + coordsString + " in maven repositories");
+          throw new IllegalArgumentException("Cannot resolve module " + coordsString +
+              " in maven repositories: "  + e.getMessage());
         } catch (NullPointerException e) {
           // Sucks, but aether throws a NPE if repository name is invalid....
           throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");

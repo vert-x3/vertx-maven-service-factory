@@ -456,6 +456,27 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  public void testMissingTransitiveDependency() throws Exception {
+    final File repository = createMyModuleRepository(
+        "testMissingTransitiveDependency",
+        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP +
+            "test-module-with-missing-deps.xml")
+    );
+
+    configureRepos(repository, null);
+
+    vertx.deployVerticle("maven:my:module:1.0", res -> {
+      assertTrue(res.failed());
+      assertTrue(res.cause() instanceof IllegalArgumentException);
+      assertTrue(res.cause().getMessage().startsWith("Cannot resolve module"));
+      assertTrue(res.cause().getMessage().contains("missing:missing"));
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
   public void testNonExistentService() throws Exception {
     File testRepo = createMyModuleRepository("testNonExistentService");
     configureRepos(testRepo, null);
@@ -590,7 +611,7 @@ public class FactoryTest extends VertxTestBase {
     http_config.setSecureScheme("https");
     http_config.setSecurePort(8443);
     http_config.setOutputBufferSize(32768);
-    ServerConnector http = new ServerConnector(server,new HttpConnectionFactory(http_config));
+    ServerConnector http = new ServerConnector(server, new HttpConnectionFactory(http_config));
     http.setPort(8080);
     http.setIdleTimeout(30000);
     SslContextFactory sslContextFactory = new SslContextFactory();
@@ -599,11 +620,11 @@ public class FactoryTest extends VertxTestBase {
     HttpConfiguration https_config = new HttpConfiguration(http_config);
     https_config.addCustomizer(new SecureRequestCustomizer());
     ServerConnector https = new ServerConnector(server,
-        new SslConnectionFactory(sslContextFactory,"http/1.1"),
+        new SslConnectionFactory(sslContextFactory, "http/1.1"),
         new HttpConnectionFactory(https_config));
     https.setPort(8443);
     https.setIdleTimeout(500000);
-    server.setConnectors(new Connector[] { https });
+    server.setConnectors(new Connector[]{https});
     return server;
   }
 
