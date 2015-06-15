@@ -76,7 +76,7 @@ The default value is: `{user.home}/.m2/repository`
 The list of remote repositories can be configured using the `vertx.maven.remoteRepos` system property - this should
 contain a space separated list of urls to the remote repositories.
 
-The default valus is `https://repo.maven.apache.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/`
+The default value is `https://repo.maven.apache.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/`
 
 ### Programmatically
 
