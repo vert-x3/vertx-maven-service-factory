@@ -120,3 +120,12 @@ You can also configure the repositories programmatically using the `setHttpProxy
 Basic authentication can be achieved by adding a username and/or password in the repository or proxy configuration.
 For instance `http://julien:secret@myrepository.com/` will configure to use `julien` username and `secret` password if the
 remote server needs authentication. Proxies are also supported.
+
+## Configuring Remote Snapshot Refresh Policy
+
+By default SNAPSHOT dependencies are update once a day. This behavior can be modified using the system property `vertx.maven.remoteSnapshotPolicy`.
+This can be set to `always` to ensure SNAPSHOT dependencies are updated every single time, `daily` to update just once a day, which is the default, or `never`
+to ensure they are never udpated.
+
+It can also be set to `interval:X` where `X` is the number of minutes to allow before updating a SNAPSHOT dependency.
+
