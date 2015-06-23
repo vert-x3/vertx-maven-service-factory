@@ -6,13 +6,13 @@ import io.vertx.core.AbstractVerticle;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class MyVerticle extends AbstractVerticle {
+public class MyVerticleB extends AbstractVerticle {
 
   BiMap map = null;
 
   @Override
   public void start() throws Exception {
-    if (BiMap.class.getClassLoader() != MyVerticle.class.getClassLoader()) {
+    if (BiMap.class.getClassLoader() == MyVerticleB.class.getClassLoader().getParent()) {
       throw new Exception("Dependency not loaded by the correct loader");
     }
   }

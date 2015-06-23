@@ -26,6 +26,10 @@ and all its dependencies in the configured Maven repositories and download and i
 It then constructs a classpath including all those artifacts and creates a classloader with that classpath in order to
 load the service using the standard [Service Verticle Factory](https://github.com/vert-x3/vertx-service-factory).
 
+Note that if the current Vert.x classpath contains already an artifact, then this dependency will not be overriden and will
+be effectively used. Vert.x does not attempt to make some classloading magic, conflicts should be resolved by modifying the
+Vert.x classpath to not contain this dependency.
+
 The Service Verticle Factory will look for a descriptor file called `my-service.json` on the constructed classpath to
 actually load the service.
 

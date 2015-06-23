@@ -357,7 +357,7 @@ public class FactoryTest extends VertxTestBase {
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceB", new DeploymentOptions(), res -> {
       assertTrue(res.succeeded());
       testComplete();
     });
