@@ -149,42 +149,7 @@
       </plugins>
     </pluginManagement>
     <plugins>
-      <!-- We assemble the factory and all the deps we need into a shaded jar.
-      This means that when it appears in the Vert.x distro all the aether deps are nicely isolated here -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.3</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <artifactSet>
-                <!-- By default all the deps go into the fat jar, but we don't need some so we can exclude them
-                here -->
-                <excludes>
-                  <exclude>io.vertx:vertx-core</exclude>
-                  <exclude>io.netty:netty-all</exclude>
-                  <exclude>com.fasterxml.jackson.core:*</exclude>
-                  <exclude>junit:junit</exclude>
-                  <exclude>org.eclipse.sisu:*</exclude>
-                  <exclude>javax.enterprise:*</exclude>
-                  <exclude>com.google.guava:*</exclude>
-                  <exclude>org.sonatype.sisu:*</exclude>
-                  <exclude>aopalliance:*</exclude>
-                  <exclude>asm:*</exclude>
-                  <exclude>com.google.code.findbugs:*</exclude>
-                </excludes>
-              </artifactSet>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
+       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <executions>
           <execution>
@@ -196,6 +161,25 @@
               <delimiters>
                 <delimiter>@</delimiter>
               </delimiters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>package-bundle</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <attach>true</attach>
+              <descriptors>
+                <descriptor>src/main/assembly/bundle.xml</descriptor>
+              </descriptors>
+<!--               <appendAssemblyId>false</appendAssemblyId> -->
             </configuration>
           </execution>
         </executions>
