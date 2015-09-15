@@ -15,7 +15,10 @@
   <dependencySet>
    <unpack>true</unpack>
    <excludes>
-    <exclude>io.vertx:*</exclude>
+    <exclude>io.vertx:vertx-core</exclude>
+    <exclude>io.netty:netty-all</exclude>
+    <exclude>com.fasterxml.jackson.core:*</exclude>
+    <exclude>junit:junit</exclude>
     <exclude>org.eclipse.sisu:*</exclude>
     <exclude>javax.enterprise:*</exclude>
     <exclude>com.google.guava:*</exclude>
