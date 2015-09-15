@@ -1,0 +1,32 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
+ <id>fat</id>
+ <formats>
+  <format>jar</format>
+ </formats>
+ <includeBaseDirectory>false</includeBaseDirectory>
+ <fileSets>
+  <fileSet>
+   <directory>${project.build.directory}/resources</directory>
+   <outputDirectory>/</outputDirectory>
+  </fileSet>
+ </fileSets>
+ <dependencySets>
+  <dependencySet>
+   <unpack>true</unpack>
+   <excludes>
+    <exclude>io.vertx:vertx-core</exclude>
+    <exclude>io.netty:netty-all</exclude>
+    <exclude>com.fasterxml.jackson.core:*</exclude>
+    <exclude>junit:junit</exclude>
+    <exclude>org.eclipse.sisu:*</exclude>
+    <exclude>javax.enterprise:*</exclude>
+    <exclude>com.google.guava:*</exclude>
+    <exclude>org.sonatype.sisu:*</exclude>
+    <exclude>aopalliance:*</exclude>
+    <exclude>asm:*</exclude>
+    <exclude>com.google.code.findbugs:*</exclude>
+   </excludes>
+  </dependencySet>
+ </dependencySets>
+</assembly>
