@@ -1,6 +1,6 @@
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
- <id>bundle</id>
+ <id>fat</id>
  <formats>
   <format>jar</format>
  </formats>
@@ -14,6 +14,16 @@
  <dependencySets>
   <dependencySet>
    <unpack>true</unpack>
+   <excludes>
+    <exclude>io.vertx:*</exclude>
+    <exclude>org.eclipse.sisu:*</exclude>
+    <exclude>javax.enterprise:*</exclude>
+    <exclude>com.google.guava:*</exclude>
+    <exclude>org.sonatype.sisu:*</exclude>
+    <exclude>aopalliance:*</exclude>
+    <exclude>asm:*</exclude>
+    <exclude>com.google.code.findbugs:*</exclude>
+   </excludes>
   </dependencySet>
  </dependencySets>
 </assembly>
