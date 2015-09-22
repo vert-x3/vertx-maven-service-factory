@@ -449,7 +449,7 @@ public class FactoryTest extends VertxTestBase {
     vertx.deployVerticle("maven:foo:module:1.0::my.serviceA", res -> {
       assertTrue(res.failed());
       assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Cannot resolve module"));
+      assertTrue(res.cause().getMessage().startsWith("Cannot find module"));
       testComplete();
     });
     await();
