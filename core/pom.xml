@@ -162,9 +162,10 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <shadedClassifierName>shaded</shadedClassifierName>
               <artifactSet>
-                <!-- By default all the deps go into the fat jar, but we don't need some so we can exclude them
-                here -->
+                <!-- By default all the deps go into the shaded jar,
+                but we don't need some so we can exclude them here -->
                 <excludes>
                   <exclude>io.vertx:vertx-core</exclude>
                   <exclude>io.netty:netty-all</exclude>
@@ -180,25 +181,7 @@
                 </excludes>
               </artifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <!-- in addition to the fat jar created with the maven-shade-plugin, we create a simple
-         jar containing only the classes from this project. This additional jar use the 'bare'
-          classifier.
-        -->
-        <executions>
-          <execution>
-            <id>bare</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <classifier>bare</classifier>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
             </configuration>
           </execution>
         </executions>
