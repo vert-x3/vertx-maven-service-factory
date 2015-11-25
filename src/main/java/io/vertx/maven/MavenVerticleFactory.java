@@ -4,28 +4,13 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.maven.resolver.ResolutionOptions;
+import io.vertx.maven.resolver.Resolver;
+import io.vertx.maven.resolver.ResolverOptions;
 import io.vertx.service.ServiceVerticleFactory;
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
-import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyFilter;
-import org.eclipse.aether.impl.DefaultServiceLocator;
-import org.eclipse.aether.repository.*;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.DependencyRequest;
-import org.eclipse.aether.resolution.DependencyResolutionException;
-import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
-import org.eclipse.aether.spi.connector.transport.TransporterFactory;
-import org.eclipse.aether.transport.file.FileTransporterFactory;
-import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.eclipse.aether.util.artifact.JavaScopes;
-import org.eclipse.aether.util.filter.DependencyFilterUtils;
-import org.eclipse.aether.util.repository.AuthenticationBuilder;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.RepositoryPolicy;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -56,19 +41,20 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   private static final String DEFAULT_MAVEN_REMOTES =
     "https://repo.maven.apache.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/";
 
-  private String localMavenRepo;
-  private List<String> remoteMavenRepos;
-  private String httpProxy;
-  private String httpsProxy;
   private Vertx vertx;
+  private final Resolver resolver;
 
   public MavenVerticleFactory() {
-    localMavenRepo = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
     String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
     // They are space delimited (space is illegal char in urls)
-    remoteMavenRepos = Arrays.asList(remoteString.split(" "));
-    httpProxy = System.getProperty(HTTP_PROXY_SYS_PROP);
-    httpsProxy = System.getProperty(HTTPS_PROXY_SYS_PROP);
+    List<String> remoteMavenRepos = Arrays.asList(remoteString.split(" "));
+
+    resolver = Resolver.create(new ResolverOptions()
+        .setHttpProxy(System.getProperty(HTTP_PROXY_SYS_PROP))
+        .setHttpsProxy(System.getProperty(HTTPS_PROXY_SYS_PROP))
+        .setLocalRepository(System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL))
+        .setRemoteRepositories(remoteMavenRepos)
+    );
   }
 
   @Override
@@ -98,79 +84,11 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
         if (coords.version() == null) {
           throw new IllegalArgumentException("Invalid service identifier, missing version: " + coordsString);
         }
-        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
-        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
-        locator.addService(TransporterFactory.class, FileTransporterFactory.class);
-        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
-        locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
-          @Override
-          public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-            exception.printStackTrace();
-          }
-        });
-        RepositorySystem system = locator.getService(RepositorySystem.class);
-        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-        Proxy proxy = null;
-        if (httpProxy != null) {
-          URL url = new URL(httpProxy);
-          Authentication authentication = extractAuth(url);
-          proxy = new Proxy("http", url.getHost(), url.getPort(), authentication);
-        }
-        Proxy secureProxy = null;
-        if (httpsProxy != null) {
-          URL url = new URL(httpsProxy);
-          Authentication authentication = extractAuth(url);
-          secureProxy = new Proxy("https", url.getHost(), url.getPort(), authentication);
-        }
-
-        LocalRepository localRepo = new LocalRepository(localMavenRepo);
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-        int count = 0;
-        List<RemoteRepository> remotes = new ArrayList<>();
-        for (String remote: remoteMavenRepos) {
-          URL url = new URL(remote);
-          Authentication auth = extractAuth(url);
-          if (auth != null) {
-            url = new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getFile());
-          }
-          RemoteRepository.Builder builder = new RemoteRepository.Builder("repo" + (count++), "default", url.toString());
-          if (auth != null) {
-            builder.setAuthentication(auth);
-          }
-          switch (url.getProtocol()) {
-            case "http":
-              if (proxy != null) {
-                builder.setProxy(proxy);
-              }
-              break;
-            case "https":
-              if (secureProxy != null) {
-                builder.setProxy(secureProxy);
-              }
-              break;
-          }
-          customizeRemoteRepoBuilder(builder);
-          RemoteRepository remoteRepo = builder.build();
-          remotes.add(remoteRepo);
-        }
-
-        Artifact artifact = new DefaultArtifact(coordsString);
-        DependencyFilter classpathFilter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
-        CollectRequest collectRequest = new CollectRequest();
-        collectRequest.setRoot(new Dependency(artifact, JavaScopes.COMPILE));
-        collectRequest.setRepositories(remotes);
-
-        DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
-
-        List<ArtifactResult> artifactResults;
+        List<Artifact> artifacts;
         try {
-          artifactResults =
-              system.resolveDependencies(session, dependencyRequest).getArtifactResults();
-        } catch (DependencyResolutionException e) {
-          throw new IllegalArgumentException("Cannot resolve module " + coordsString +
-              " in maven repositories: "  + e.getMessage());
+          artifacts =
+              resolver.resolve(coordsString, new ResolutionOptions());
         } catch (NullPointerException e) {
           // Sucks, but aether throws a NPE if repository name is invalid....
           throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");
@@ -181,9 +99,9 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
         if (serviceName != null) {
           serviceIdentifer = "service:" + serviceName;
         } else {
-          for (ArtifactResult result : artifactResults) {
-            if (result.getArtifact().getGroupId().equals(coords.owner()) && result.getArtifact().getArtifactId().equals(coords.serviceName())) {
-              File file = result.getArtifact().getFile();
+          for (Artifact result : artifacts) {
+            if (result.getGroupId().equals(coords.owner()) && result.getArtifactId().equals(coords.serviceName())) {
+              File file = result.getFile();
               JarFile jarFile = new JarFile(file);
               Manifest manifest = jarFile.getManifest();
               if (manifest != null) {
@@ -198,8 +116,8 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
 
         // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
         // then we don't add it to the classpath for the module
-        List<String> classpath = artifactResults.stream().
-            map(res -> res.getArtifact().getFile().getAbsolutePath()).
+        List<String> classpath = artifacts.stream().
+            map(res -> res.getFile().getAbsolutePath()).
             collect(Collectors.toList());
         URL[] urls = new URL[classpath.size()];
         int index = 0;
@@ -235,55 +153,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     }
   }
 
-  public String getLocalMavenRepo() {
-    return localMavenRepo;
-  }
-
-  public void setLocalMavenRepo(String localMavenRepo) {
-    this.localMavenRepo = localMavenRepo;
-  }
-
-  public List<String> getRemoteMavenRepos() {
-    return remoteMavenRepos;
-  }
-
-  public void setRemoteMavenRepos(List<String> remoteMavenRepos) {
-    this.remoteMavenRepos = remoteMavenRepos;
-  };
-
-  public String getHttpProxy() {
-    return httpProxy;
-  }
-
-  public void setHttpProxy(String httpProxy) {
-    this.httpProxy = httpProxy;
-  }
-
-  public String getHttpsProxy() {
-    return httpsProxy;
-  }
-
-  public void setHttpsProxy(String httpsProxy) {
-    this.httpsProxy = httpsProxy;
-  }
-
-  private static Authentication extractAuth(URL url) {
-    String userInfo = url.getUserInfo();
-    if (userInfo != null) {
-      AuthenticationBuilder authBuilder = new AuthenticationBuilder();
-      int sep = userInfo.indexOf(':');
-      if (sep != -1) {
-        authBuilder.addUsername(userInfo.substring(0, sep));
-        authBuilder.addPassword(userInfo.substring(sep + 1));
-      } else {
-        authBuilder.addUsername(userInfo);
-      }
-      return authBuilder.build();
-    }
-    return null;
-  }
-
-  // testing
+  // for testing purpose.
   public static volatile boolean RESOLVE_CALLED;
 }
 

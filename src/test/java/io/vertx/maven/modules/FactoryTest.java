@@ -1,12 +1,12 @@
 package io.vertx.maven.modules;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.maven.MavenVerticleFactory;
+import io.vertx.maven.utils.FileUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.jetty.proxy.ProxyServlet;
@@ -24,10 +24,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -416,12 +413,15 @@ public class FactoryTest extends VertxTestBase {
     System.setProperty(MavenVerticleFactory.LOCAL_REPO_SYS_PROP, "qiwhdiqowd");
     System.setProperty(MavenVerticleFactory.REMOTE_REPOS_SYS_PROP, "yqgwduyqwd");
     vertx.close();
-    vertx = Vertx.vertx();
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", res -> {
-      assertTrue(res.failed());
-      testComplete();
-    });
-    await();
+    try {
+      vertx = Vertx.vertx();
+      fail("Exception expected");
+    } catch (ServiceConfigurationError e) {
+      // OK
+    }
+    // The resolver was not created correctly, so resolve was not called.
+    // Force it to true.
+    MavenVerticleFactory.RESOLVE_CALLED = true;
   }
 
   @Test
@@ -490,7 +490,7 @@ public class FactoryTest extends VertxTestBase {
     vertx.deployVerticle("maven:my:module:1.0", res -> {
       assertTrue(res.failed());
       assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Cannot resolve module"));
+      assertTrue(res.cause().getMessage().startsWith("Cannot resolve artifact"));
       assertTrue(res.cause().getMessage().contains("missing:missing"));
       testComplete();
     });
