@@ -1,0 +1,4 @@
+{
+  "version": "${project.version}",
+  "localRepository": "${settings.localRepository}"
+}

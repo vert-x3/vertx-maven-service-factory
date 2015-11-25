@@ -5,9 +5,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.vertx</groupId>
-    <artifactId>vertx-maven-service-factory-parent</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <groupId>vertx-test</groupId>
+    <artifactId>vertx-maven-service-factory-tests</artifactId>
+    <version>1.0.0</version>
   </parent>
 
   <artifactId>test-module</artifactId>
@@ -24,14 +24,6 @@
   <build>
     <finalName>mymodule</finalName>
     <plugins>
-      <!-- We don't need to deploy this artifact for real as it's used for testing -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
       <!-- Extension and classifier packagings -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>

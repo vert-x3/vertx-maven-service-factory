@@ -5,9 +5,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.vertx</groupId>
-    <artifactId>vertx-maven-service-factory-parent</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <groupId>vertx-test</groupId>
+    <artifactId>vertx-maven-service-factory-tests</artifactId>
+    <version>1.0.0</version>
   </parent>
 
   <artifactId>test-module-system-dep</artifactId>

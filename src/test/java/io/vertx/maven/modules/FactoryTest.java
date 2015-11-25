@@ -1,7 +1,10 @@
 package io.vertx.maven.modules;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.maven.MavenVerticleFactory;
 import io.vertx.test.core.VertxTestBase;
@@ -13,17 +16,18 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.DispatcherType;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -34,6 +38,23 @@ public class FactoryTest extends VertxTestBase {
   private static final String FILE_SEP = System.getProperty("file.separator");
 
   private List<Server> servers = new ArrayList<>();
+
+  @BeforeClass
+  public static void loadConstants() throws IOException {
+    File file = new File("target/test-classes/constants.json");
+    if (! file.exists()) {
+      throw new IllegalStateException("Cannot find the constants.json file, please run Maven first");
+    }
+    JsonNode node = Json.mapper.readValue(file, JsonNode.class);
+    System.setProperty("version", node.get("version").asText());
+    System.setProperty("localRepository", node.get("localRepository").asText());
+  }
+
+  @BeforeClass
+  public static void clearAllRepositories() {
+    File repositories = new File("target" + FILE_SEP + "repositories");
+    FileUtils.delete(repositories);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -459,7 +480,7 @@ public class FactoryTest extends VertxTestBase {
   public void testMissingTransitiveDependency() throws Exception {
     final File repository = createMyModuleRepository(
         "testMissingTransitiveDependency",
-        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP +
             "test-module-with-missing-deps.xml")
     );
@@ -517,7 +538,7 @@ public class FactoryTest extends VertxTestBase {
   private File createMyModuleRepository(String repoPath) throws Exception {
     return createMyModuleRepository(
         repoPath,
-        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
     );
   }
@@ -525,7 +546,7 @@ public class FactoryTest extends VertxTestBase {
   private File createMyModuleZipRepository(String repoPath) throws Exception {
     return createMyModuleRepository(
         repoPath,
-        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.zip"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule.zip"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
     );
   }
@@ -533,7 +554,7 @@ public class FactoryTest extends VertxTestBase {
   private File createMyModuleClassifierRepository(String repoPath) throws Exception {
     return createMyModuleRepository(
         repoPath,
-        new File(".." + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule-the_classifier.jar"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module" + FILE_SEP + "target" + FILE_SEP + "mymodule-the_classifier.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module.xml")
     );
   }
@@ -541,7 +562,7 @@ public class FactoryTest extends VertxTestBase {
   private File createMyModuleMainVerticleRepository(String repoPath) throws Exception {
     return createMyModuleRepository(
         repoPath,
-        new File(".." + FILE_SEP + "test-module-main-verticle" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module-main-verticle" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module-main-verticle.xml")
     );
   }
@@ -549,7 +570,7 @@ public class FactoryTest extends VertxTestBase {
   private File createMyModuleRepositoryWithSystemDep(String repoPath) throws Exception {
     return createMyModuleRepository(
         repoPath,
-        new File(".." + FILE_SEP + "test-module-system-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module-system-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module-system-dep.xml")
     );
   }
@@ -557,13 +578,13 @@ public class FactoryTest extends VertxTestBase {
   private File createMyModuleRepositoryWithDep(String repoPath) throws Exception {
     return createMyModuleRepository(
         repoPath,
-        new File(".." + FILE_SEP + "test-module-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
+        new File("target" + FILE_SEP + "test-projects" + FILE_SEP + "test-module-dep" + FILE_SEP + "target" + FILE_SEP + "mymodule.jar"),
         new File("target" + FILE_SEP + "test-classes" + FILE_SEP + "poms" + FILE_SEP + "test-module-dep.xml")
     );
   }
 
   private File getWorkDir(String path) {
-    return new File("target" + FILE_SEP + path);
+    return new File("target" + FILE_SEP + "repositories" + FILE_SEP + path);
   }
 
   private File getLogFile(String path) {

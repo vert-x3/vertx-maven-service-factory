@@ -5,19 +5,24 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.vertx</groupId>
-    <artifactId>vertx-maven-service-factory-parent</artifactId>
-    <version>3.2.0-SNAPSHOT</version>
+    <groupId>vertx-test</groupId>
+    <artifactId>vertx-maven-service-factory-tests</artifactId>
+    <version>1.0.0</version>
   </parent>
 
-  <artifactId>test-module-main-verticle</artifactId>
+  <artifactId>test-module-dep</artifactId>
 
-  <name>Maven Service Factory - Test module with a main verticle declared</name>
+  <name>Maven Service Factory - Test module with its custom dependency</name>
 
   <dependencies>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>17.0</version>
     </dependency>
   </dependencies>
 
@@ -32,7 +37,7 @@
           <skip>true</skip>
         </configuration>
       </plugin>
-      <!-- Build the module jar in process-classes phase instead of package so it will be
+      <!-- Install the module jar in process-classes phase instead of package so it will be
            available in the test phase -->
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
@@ -40,13 +45,6 @@
           <execution>
             <id>default-jar</id>
             <phase>process-classes</phase>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Main-Verticle>service:my.service</Main-Verticle>
-                </manifestEntries>
-              </archive>
-            </configuration>
           </execution>
         </executions>
       </plugin>
