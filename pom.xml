@@ -18,6 +18,7 @@
   <properties>
     <aether.version>1.0.2.v20150114</aether.version>
     <vertx.version>${project.version}</vertx.version>
+    <asciidoc.dir>${project.basedir}/src/main/asciidoc</asciidoc.dir>
   </properties>
 
   <dependencyManagement>
@@ -92,21 +93,21 @@
       <version>${aether.version}</version>
     </dependency>
 
-    <!--
-      note :
-        Aether during tests will only create local test repositories, such repository is are created
-        from the local repository (${settings.localRepository}) passed as a system property named
-        localRepository (see surefire config). So we must force some dependencies for the test to execute properly.
-    -->
+
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
-      <scope>test</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen</artifactId>
-      <scope>test</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codetrans</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -167,6 +168,25 @@
       </testResource>
     </testResources>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <annotationProcessors>
+                <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
+              </annotationProcessors>
+              <compilerArgs>
+                <arg>-Adocgen.output=${asciidoc.dir}</arg>
+                <arg>-Amaven.groupId=${project.groupId}</arg>
+                <arg>-Amaven.artifactId=${project.artifactId}</arg>
+                <arg>-Amaven.version=${project.version}</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- We assemble the factory and all the deps we need into a shaded jar.
       This means that when it appears in the Vert.x distro all the aether deps are nicely isolated here -->
       <plugin>
@@ -240,6 +260,25 @@
               <pomIncludes>
                 <pomInclude>pom.xml</pomInclude>
               </pomIncludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>doc</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <attach>true</attach>
+              <descriptors>
+                <descriptor>${basedir}/src/main/assembly/docs.xml</descriptor>
+              </descriptors>
             </configuration>
           </execution>
         </executions>
