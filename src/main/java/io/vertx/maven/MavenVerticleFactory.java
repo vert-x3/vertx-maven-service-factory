@@ -5,12 +5,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.maven.resolver.ResolutionOptions;
-import io.vertx.maven.resolver.Resolver;
-import io.vertx.maven.resolver.ResolverOptions;
 import io.vertx.service.ServiceVerticleFactory;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.RepositoryPolicy;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -29,32 +25,58 @@ import java.util.stream.Collectors;
  */
 public class MavenVerticleFactory extends ServiceVerticleFactory {
 
-  public static final String LOCAL_REPO_SYS_PROP = "vertx.maven.localRepo";
-  public static final String REMOTE_REPOS_SYS_PROP = "vertx.maven.remoteRepos";
-  public static final String HTTP_PROXY_SYS_PROP = "vertx.maven.httpProxy";
-  public static final String HTTPS_PROXY_SYS_PROP = "vertx.maven.httpsProxy";
-  public static final String REMOTE_SNAPSHOT_POLICY_SYS_PROP = "vertx.maven.remoteSnapshotPolicy";
+  // The constants are kept there for compatibility purpose. Values are set in the ResolverOptions class
+
+  public static final String LOCAL_REPO_SYS_PROP = ResolverOptions.LOCAL_REPO_SYS_PROP;
+  public static final String REMOTE_REPOS_SYS_PROP = ResolverOptions.REMOTE_REPOS_SYS_PROP;
+  public static final String HTTP_PROXY_SYS_PROP = ResolverOptions.HTTP_PROXY_SYS_PROP;
+  public static final String HTTPS_PROXY_SYS_PROP = ResolverOptions.HTTPS_PROXY_SYS_PROP;
+  public static final String REMOTE_SNAPSHOT_POLICY_SYS_PROP = ResolverOptions.REMOTE_SNAPSHOT_POLICY_SYS_PROP;
 
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final String DEFAULT_MAVEN_LOCAL = USER_HOME + FILE_SEP + ".m2" + FILE_SEP + "repository";
   private static final String DEFAULT_MAVEN_REMOTES =
-    "https://repo.maven.apache.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/";
+      "https://repo.maven.apache.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/";
 
   private Vertx vertx;
   private final Resolver resolver;
 
+  /**
+   * Creates an instance of
+   * {@link MavenVerticleFactory} using the system properties to initialize the {@link ResolverOptions}.
+   * <p/>
+   * It uses the default resolver implementation.
+   */
   public MavenVerticleFactory() {
-    String remoteString = System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES);
-    // They are space delimited (space is illegal char in urls)
-    List<String> remoteMavenRepos = Arrays.asList(remoteString.split(" "));
-
-    resolver = Resolver.create(new ResolverOptions()
+    this(new ResolverOptions()
         .setHttpProxy(System.getProperty(HTTP_PROXY_SYS_PROP))
         .setHttpsProxy(System.getProperty(HTTPS_PROXY_SYS_PROP))
         .setLocalRepository(System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL))
-        .setRemoteRepositories(remoteMavenRepos)
+        .setRemoteRepositories(
+            Arrays.asList(System.getProperty(REMOTE_REPOS_SYS_PROP, DEFAULT_MAVEN_REMOTES).split(" ")))
     );
+  }
+
+  /**
+   * Creates an instance of {@link MavenVerticleFactory} with the given resolution options.
+   * <p/>
+   * It uses the default resolver implementation.
+   *
+   * @param options the options.
+   */
+  public MavenVerticleFactory(ResolverOptions options) {
+    this(Resolver.create(options));
+  }
+
+  /**
+   * Creates an instance of {@link MavenVerticleFactory} with a custom {@link Resolver}. The resolver must already be
+   * configured.
+   *
+   * @param resolver the resolver to use
+   */
+  public MavenVerticleFactory(Resolver resolver) {
+    this.resolver = resolver;
   }
 
   @Override
@@ -122,7 +144,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
         URL[] urls = new URL[classpath.size()];
         int index = 0;
         List<String> extraCP = new ArrayList<>(urls.length);
-        for (String pathElement: classpath) {
+        for (String pathElement : classpath) {
           File file = new File(pathElement);
           extraCP.add(file.getAbsolutePath());
           try {
@@ -146,11 +168,11 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
     });
   }
 
-  protected void customizeRemoteRepoBuilder(RemoteRepository.Builder builder) {
-    String updatePolicy = System.getProperty(REMOTE_SNAPSHOT_POLICY_SYS_PROP);
-    if (updatePolicy != null && !updatePolicy.isEmpty()) {
-      builder.setSnapshotPolicy(new RepositoryPolicy(true, updatePolicy, RepositoryPolicy.CHECKSUM_POLICY_WARN));
-    }
+  /**
+   * @return the underlying resolver instance.
+   */
+  public Resolver getResolver() {
+    return resolver;
   }
 
   // for testing purpose.

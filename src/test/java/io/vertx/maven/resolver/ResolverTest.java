@@ -17,6 +17,8 @@
 package io.vertx.maven.resolver;
 
 
+import io.vertx.maven.Resolver;
+import io.vertx.maven.ResolverOptions;
 import io.vertx.maven.utils.FileUtils;
 import io.vertx.maven.utils.LocalArtifact;
 import io.vertx.maven.utils.LocalDependency;

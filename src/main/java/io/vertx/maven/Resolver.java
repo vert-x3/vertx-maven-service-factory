@@ -14,8 +14,10 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.maven.resolver;
+package io.vertx.maven;
 
+import io.vertx.maven.resolver.ResolutionOptions;
+import io.vertx.maven.resolver.ResolverImpl;
 import org.eclipse.aether.artifact.Artifact;
 
 import java.util.List;

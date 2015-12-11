@@ -14,7 +14,7 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.maven.resolver;
+package io.vertx.maven;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,11 +32,14 @@ public class ResolverOptions {
   public static final String HTTP_PROXY_SYS_PROP = "vertx.maven.httpProxy";
   public static final String HTTPS_PROXY_SYS_PROP = "vertx.maven.httpsProxy";
 
+  public static final String REMOTE_SNAPSHOT_POLICY_SYS_PROP = "vertx.maven.remoteSnapshotPolicy";
+
   private static final String USER_HOME = System.getProperty("user.home");
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final String DEFAULT_MAVEN_LOCAL = USER_HOME + FILE_SEP + ".m2" + FILE_SEP + "repository";
   private static final String DEFAULT_MAVEN_REMOTES =
       "http://central.maven.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/";
+  private static final String DEFAULT_REMOTE_SNAPSHOT_POLICY = "daily";
 
   private String localRepository = System.getProperty(LOCAL_REPO_SYS_PROP, DEFAULT_MAVEN_LOCAL);
 
@@ -45,6 +48,9 @@ public class ResolverOptions {
 
   private String httpProxy = System.getProperty(HTTP_PROXY_SYS_PROP);
   private String httpsProxy = System.getProperty(HTTPS_PROXY_SYS_PROP);
+
+  private String remoteSnapshotPolicy = System.getProperty(REMOTE_SNAPSHOT_POLICY_SYS_PROP,
+      DEFAULT_REMOTE_SNAPSHOT_POLICY);
 
   /**
    * @return the configured proxy address for HTTP request, {@code null} if none.
@@ -122,6 +128,27 @@ public class ResolverOptions {
    */
   public ResolverOptions setRemoteRepositories(List<String> remoteRepositories) {
     this.remoteRepositories = remoteRepositories;
+    return this;
+  }
+
+  /**
+   * Gets the remote snapshot policy.
+   *
+   * @return the remote snapshot policy.
+   */
+  public String getRemoteSnapshotPolicy() {
+    return remoteSnapshotPolicy;
+  }
+
+  /**
+   * Sets the remote snapshot policy (`daily` by default). Accepted values are {@code daily}, {@code never}, {@code always} and
+   * {@code interval:X} where {@code X} is the number of minutes between two resolutions.
+   *
+   * @param remoteSnapshotPolicy the desired policy
+   * @return the current {@link ResolverOptions} instance
+   */
+  public ResolverOptions setRemoteSnapshotPolicy(String remoteSnapshotPolicy) {
+    this.remoteSnapshotPolicy = remoteSnapshotPolicy;
     return this;
   }
 }

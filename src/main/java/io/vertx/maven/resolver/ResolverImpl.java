@@ -17,6 +17,8 @@
 package io.vertx.maven.resolver;
 
 
+import io.vertx.maven.Resolver;
+import io.vertx.maven.ResolverOptions;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -63,6 +65,7 @@ public class ResolverImpl implements Resolver {
   private final RepositorySystem system;
   private LocalRepository localRepo;
   private final List<RemoteRepository> remotes = new ArrayList<>();
+  private final String remoteSnapshotPolicy;
 
   /**
    * Creates a new instance of {@link ResolverImpl} with the given options.
@@ -74,6 +77,7 @@ public class ResolverImpl implements Resolver {
     List<String> remoteMavenRepos = options.getRemoteRepositories();
     String httpProxy = options.getHttpProxy();
     String httpsProxy = options.getHttpsProxy();
+    remoteSnapshotPolicy = options.getRemoteSnapshotPolicy();
 
     DefaultServiceLocator locator = getDefaultServiceLocator();
 
@@ -275,10 +279,9 @@ public class ResolverImpl implements Resolver {
         .collect(Collectors.toList());
   }
 
-  protected void customizeRemoteRepoBuilder(RemoteRepository.Builder builder) {
-    String updatePolicy = System.getProperty(REMOTE_SNAPSHOT_POLICY_SYS_PROP);
-    if (updatePolicy != null && !updatePolicy.isEmpty()) {
-      builder.setSnapshotPolicy(new RepositoryPolicy(true, updatePolicy, RepositoryPolicy.CHECKSUM_POLICY_WARN));
+  public void customizeRemoteRepoBuilder(RemoteRepository.Builder builder) {
+    if (remoteSnapshotPolicy != null && !remoteSnapshotPolicy.isEmpty()) {
+      builder.setSnapshotPolicy(new RepositoryPolicy(true, remoteSnapshotPolicy, RepositoryPolicy.CHECKSUM_POLICY_WARN));
     }
   }
 
