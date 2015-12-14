@@ -1,10 +1,10 @@
 = Maven verticle factory
 
-This `VerticleFactory` implementation loads a service dynamically from a Maven repository at run-time.
+The Maven verticle factory is an implementation of verticle factory loading a service dynamically from a Maven
+repository at run-time.
 
-It's useful
-if you don't want to package all your service dependencies at build-time into your application, but would
-rather install and deploy them dynamically at run-time when they are requested.
+It's useful if you don't want to package all your service dependencies at build-time into
+your application, but would rather install and deploy them dynamically at run-time when they are requested.
 
 ## Usage
 
@@ -19,7 +19,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-maven-service-factory</artifactId>
-  <version>3.2.0-SNAPSHOT</version>
+  <version>3.2.0</version>
 </dependency>
 ----
 
@@ -27,7 +27,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-maven-service-factory:3.2.0-SNAPSHOT'
+compile 'io.vertx:vertx-maven-service-factory:3.2.0'
 ----
 
 This `VerticleFactory` uses the prefix `maven:` to select it when deploying services.
