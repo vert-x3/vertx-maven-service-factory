@@ -17,6 +17,8 @@
 package io.vertx.maven.resolver;
 
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.maven.Resolver;
 import io.vertx.maven.ResolverOptions;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -47,8 +49,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -58,8 +58,12 @@ import java.util.stream.Collectors;
  */
 public class ResolverImpl implements Resolver {
 
-  public static final Logger LOGGER = Logger.getLogger("vertx-stack-resolver");
+  private final static Logger LOGGER = LoggerFactory.getLogger("vertx-stack-resolver");
 
+  /**
+   * @deprecated use {@link ResolverOptions#REMOTE_SNAPSHOT_POLICY_SYS_PROP} instead.
+   */
+  @Deprecated
   public static final String REMOTE_SNAPSHOT_POLICY_SYS_PROP = "vertx.maven.remoteSnapshotPolicy";
 
   private final RepositorySystem system;
@@ -147,7 +151,7 @@ public class ResolverImpl implements Resolver {
     locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
       @Override
       public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-        LOGGER.log(Level.SEVERE, "Service creation failure: " + exception.getMessage(), exception);
+        LOGGER.error("Service creation failure: " + exception.getMessage(), exception);
       }
     });
     return locator;
@@ -157,7 +161,7 @@ public class ResolverImpl implements Resolver {
     try {
       return new URL(u);
     } catch (MalformedURLException e) {
-      LOGGER.log(Level.SEVERE, "Cannot create url from " + u, e);
+      LOGGER.error("Cannot create url from " + u, e);
       throw new IllegalArgumentException("Invalid url " + u);
     }
   }
@@ -167,7 +171,7 @@ public class ResolverImpl implements Resolver {
       return new URL(protocol, host, port, file);
     } catch (MalformedURLException e) {
       final String url = "{protocol:" + protocol + ", host:" + host + ", port:" + port + ", file:" + file + "}";
-      LOGGER.log(Level.SEVERE, "Cannot create url from " + url, e);
+      LOGGER.error("Cannot create url from " + url, e);
       throw new IllegalArgumentException("Invalid url " + url);
     }
   }
