@@ -50,7 +50,7 @@
  * `com.mycompany:main-services:1.2` followed by a double colon `::` followed by the service name. The service name is
  * used to find the service descriptor file inside the artifact which is named by the service name with a `.json`
  * extension. This is explained in the the
- * http://vertx.io/docs/vertx-service-factory/(vert.x service factory documentation).
+ * link:http://vertx.io/docs/vertx-service-factory/java[vert.x service factory documentation].
  *
  * For example, to deploy a service that exists in Maven artifact `com.mycompany:my-artifact:1.2` called `my-service` you
  * would use the string `maven:com.mycompany:main-services:1.2::my-service`. Given this string, the verticle factory
@@ -58,7 +58,7 @@
  * 1. uses the Aether client try and locate the artifact `com.mycompany:my-artifact:1.2` and all its dependencies in
  * the configured Maven repositories and download and install it locally if it's not already installed.
  * 2. constructs a classpath including all those artifacts and creates a classloader with that classpath
- * 3. service using the http://vertx.io/docs/vertx-service-factory/(vert.x service factory).
+ * 3. service using the link:http://vertx.io/docs/vertx-service-factory/java[vert.x service factory].
  *
  * Note that if the current Vert.x classpath contains already an artifact, then this dependency will not be
  * overridden and will be effectively used. Vert.x does not attempt to make some class loading magic, conflicts
