@@ -80,7 +80,7 @@
  * vertx run maven:com.mycompany:my-artifact:1.2::my-service
  * ---
  *
- * The service name (`my-service`) can be omitted when the _META-INF/MANIFEST_ a the jar containing the
+ * The service name (`my-service`) can be omitted when the _META-INF/MANIFEST_ in the jar containing the
  * service contains a `Main-Verticle` entry that declares the verticle to run:
  *
  * [source,$lang]
@@ -91,7 +91,7 @@
  * And the manifest contains:
  *
  * ----
- * Main-Verticle: service:my.service
+ * Main-Verticle: service:my-service
  * ----
  *
  *

@@ -19,7 +19,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 <dependency>
   <groupId>io.vertx</groupId>
   <artifactId>vertx-maven-service-factory</artifactId>
-  <version>3.2.1</version>
+  <version>3.3.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -27,7 +27,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-maven-service-factory:3.2.1'
+compile 'io.vertx:vertx-maven-service-factory:3.3.0-SNAPSHOT'
 ----
 
 This `VerticleFactory` uses the prefix `maven:` to select it when deploying services.
@@ -65,18 +65,18 @@ Or can be deployed on the command line with:
 vertx run maven:com.mycompany:my-artifact:1.2::my-service
 ---
 
-The service name (`my-service`) can be omitted when the _META-INF/MANIFEST_ a the jar containing the
+The service name (`my-service`) can be omitted when the _META-INF/MANIFEST_ in the jar containing the
 service contains a `Main-Verticle` entry that declares the verticle to run:
 
 [source,java]
 ----
-vertx.deployVerticle("maven:com.mycompany:my-artifact:1.2::my-service", options);
+vertx.deployVerticle("maven:com.mycompany:my-artifact:1.2", options);
 ----
 
 And the manifest contains:
 
 ----
-Main-Verticle: service:my.service
+Main-Verticle: service:my-service
 ----
 
 

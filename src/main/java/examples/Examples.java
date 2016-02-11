@@ -18,7 +18,7 @@ public class Examples {
   }
 
   public void example2(Vertx vertx, DeploymentOptions options) {
-    vertx.deployVerticle("maven:com.mycompany:my-artifact:1.2::my-service", options);
+    vertx.deployVerticle("maven:com.mycompany:my-artifact:1.2", options);
   }
 
   public void example3(Vertx vertx) {
