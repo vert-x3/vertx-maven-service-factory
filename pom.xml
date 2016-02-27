@@ -16,7 +16,8 @@
   <name>Maven Service Factory</name>
 
   <properties>
-    <aether.version>1.0.2.v20150114</aether.version>
+    <aether.version>1.1.0</aether.version>
+    <jetty.version>9.3.7.v20160115</jetty.version>
     <vertx.version>${project.version}</vertx.version>
   </properties>
 
@@ -143,19 +144,19 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
-      <version>9.3.3.v20150827</version>
+      <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>9.3.3.v20150827</version>
+      <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-proxy</artifactId>
-      <version>9.3.3.v20150827</version>
+      <version>${jetty.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
