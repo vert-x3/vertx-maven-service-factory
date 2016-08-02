@@ -5,8 +5,8 @@
 This is a `VerticleFactory` implementation which deploys a verticle given a service name and load it from a Maven 
 repository.
 
-The documentation is available [here](src/main/asciidoc/index.ad), or on the the 
-[vert.x web site](http://vertx.io/docs/vertx-maven-service-factory).
+The documentation is available [here](src/main/asciidoc/java/index.ad), or on the the 
+[vert.x web site](http://vertx.io/docs/vertx-maven-service-factory/java).
 
 ## Build instructions
 
