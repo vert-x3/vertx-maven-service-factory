@@ -199,7 +199,7 @@
  * {@link examples.Examples#example8(io.vertx.core.Vertx, io.vertx.maven.Resolver)}
  * ----
  */
-@Document(fileName = "index.ad")
+@Document(fileName = "index.adoc")
 package io.vertx.maven;
 
 import io.vertx.docgen.Document;
