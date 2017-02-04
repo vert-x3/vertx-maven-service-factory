@@ -39,12 +39,14 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.7.16</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <!-- used by aether -->
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
       <version>1.7.6</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
