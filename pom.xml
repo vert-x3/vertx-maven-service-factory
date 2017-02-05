@@ -41,6 +41,13 @@
       <version>1.7.16</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <!-- specify the SLF4J version to match the one used by vert.x -->
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <version>1.7.16</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>io.vertx</groupId>
