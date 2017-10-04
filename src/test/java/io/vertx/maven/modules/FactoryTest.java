@@ -124,35 +124,35 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testZipExtension() throws Exception {
+    waitFor(2);
     File testRepo = createMyModuleZipRepository("testZipExtension");
     configureRepos(testRepo, null);
     vertx.eventBus().localConsumer("mymodule").handler(message -> {
       assertEquals("whateverZip", message.body());
-      testComplete();
+      complete();
     });
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", ar1 -> {
-      assertTrue(ar1.failed());
-      vertx.deployVerticle("maven:my:module:zip:1.0::my.serviceZip", ar2 -> {
-        assertTrue(ar2.succeeded());
-      });
-    });
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", onFailure(err -> {
+      vertx.deployVerticle("maven:my:module:zip:1.0::my.serviceZip", onSuccess(id -> {
+        complete();
+      }));
+    }));
     await();
   }
 
   @Test
   public void testClassifier() throws Exception {
+    waitFor(2);
     File testRepo = createMyModuleClassifierRepository("testClassifier");
     configureRepos(testRepo, null);
     vertx.eventBus().localConsumer("mymodule").handler(message -> {
       assertEquals("whateverClassifier", message.body());
-      testComplete();
+      complete();
     });
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", ar1 -> {
-      assertTrue(ar1.failed());
-      vertx.deployVerticle("maven:my:module:jar:the_classifier:1.0::my.serviceClassifier", ar2 -> {
-        assertTrue(ar2.succeeded());
-      });
-    });
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", onFailure(err -> {
+      vertx.deployVerticle("maven:my:module:jar:the_classifier:1.0::my.serviceClassifier", onSuccess(id -> {
+        complete();
+      }));
+    }));
     await();
   }
 
@@ -163,10 +163,9 @@ public class FactoryTest extends VertxTestBase {
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(testRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -177,10 +176,9 @@ public class FactoryTest extends VertxTestBase {
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -191,10 +189,9 @@ public class FactoryTest extends VertxTestBase {
     emptyRepo.deleteOnExit();
     startRemoteServer(configureTls(createRemoteServer(testRepo)));
     configureRepos(emptyRepo, "https://localhost:8443/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -209,11 +206,10 @@ public class FactoryTest extends VertxTestBase {
     server.start();
     servers.add(server);
     configureRepos(emptyRepo, "http://username_value:password_value@localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       assertTrue(filter.authenticated.get());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -227,10 +223,9 @@ public class FactoryTest extends VertxTestBase {
     ((ServletContextHandler) server.getHandler()).addFilter(new FilterHolder(filter), "/*", EnumSet.of(DispatcherType.REQUEST));
     startRemoteServer(configureTls(server));
     configureRepos(emptyRepo, "https://username_value:password_value@localhost:8443/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -251,11 +246,10 @@ public class FactoryTest extends VertxTestBase {
     server.start();
     servers.add(server);
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       assertTrue("Was expecting " + urlCollector.requestedHosts + " to contain " + expectedHost, urlCollector.requestedHosts.contains(expectedHost));
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -277,11 +271,10 @@ public class FactoryTest extends VertxTestBase {
     System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     configureRepos(emptyRepo, "https://localhost:8443/");
     URL expectedHost = new URL("http://localhost:8443/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       assertTrue("Was expecting " + urlCollector.requestedHosts + " to contain " + expectedHost, urlCollector.requestedHosts.contains(expectedHost));
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -304,12 +297,11 @@ public class FactoryTest extends VertxTestBase {
     server.start();
     servers.add(server);
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
       assertTrue("Was expecting " + urlCollector.requestedHosts + " to contain " + expectedHost, urlCollector.requestedHosts.contains(expectedHost));
       assertTrue(filter.authenticated.get());
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -321,10 +313,9 @@ public class FactoryTest extends VertxTestBase {
     startRemoteServer(createRemoteServer(testRepo));
     System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-      assertFalse(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onFailure(err -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -335,10 +326,9 @@ public class FactoryTest extends VertxTestBase {
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", false)), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", false)), onSuccess(id -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -358,10 +348,9 @@ public class FactoryTest extends VertxTestBase {
       emptyRepo.deleteOnExit();
       startRemoteServer(createRemoteServer(testRepo));
       configureRepos(emptyRepo, "http://localhost:8080/");
-      vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", true)), res -> {
-        assertTrue(res.succeeded());
+      vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions().setConfig(new JsonObject().put("loaded_globally", true)), onSuccess(id -> {
         testComplete();
-      });
+      }));
       await();
     } finally {
       Thread.currentThread().setContextClassLoader(prev);
@@ -375,10 +364,9 @@ public class FactoryTest extends VertxTestBase {
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
     configureRepos(emptyRepo, "http://localhost:8080/");
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceB", new DeploymentOptions(), res -> {
-      assertTrue(res.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceB", new DeploymentOptions(), onSuccess(id -> {
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -398,10 +386,9 @@ public class FactoryTest extends VertxTestBase {
       emptyRepo.deleteOnExit();
       startRemoteServer(createRemoteServer(testRepo));
       configureRepos(emptyRepo, "http://localhost:8080/");
-      vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), res -> {
-        assertTrue(res.succeeded());
+      vertx.deployVerticle("maven:my:module:1.0::my.serviceA", new DeploymentOptions(), onSuccess(id -> {
         testComplete();
-      });
+      }));
       await();
     } finally {
       Thread.currentThread().setContextClassLoader(prev);
@@ -430,25 +417,22 @@ public class FactoryTest extends VertxTestBase {
     configureRepos(testRepo, null);
     CountDownLatch latch = new CountDownLatch(2);
     vertx.eventBus().localConsumer("mymoduleStopped").handler(message -> latch.countDown());
-    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", res -> {
-      assertTrue(res.succeeded());
-      vertx.undeploy(res.result(), res2 -> {
-        assertTrue(res2.succeeded());
+    vertx.deployVerticle("maven:my:module:1.0::my.serviceA", onSuccess(id -> {
+      vertx.undeploy(id, onSuccess(v -> {
         latch.countDown();
-      });
-    });
+      }));
+    }));
     awaitLatch(latch);
   }
 
   @Test
   public void testInvalidServiceIDNoVersion() throws Exception {
     // Must always have version for Maven service factory
-    vertx.deployVerticle("maven:my:module::my.module", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Invalid service identifier"));
+    vertx.deployVerticle("maven:my:module::my.module", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Invalid service identifier"));
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -456,23 +440,21 @@ public class FactoryTest extends VertxTestBase {
   public void testNoServiceName() throws Exception {
     File testRepo = createMyModuleRepository("testNoServiceName");
     configureRepos(testRepo, null);
-    vertx.deployVerticle("maven:my:module:1.0", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Invalid service identifier"));
+    vertx.deployVerticle("maven:my:module:1.0", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Invalid service identifier"));
       testComplete();
-    });
+    }));
     await();
   }
 
   @Test
   public void testNonExistentModule() throws Exception {
-    vertx.deployVerticle("maven:foo:module:1.0::my.serviceA", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Cannot resolve artifact"));
+    vertx.deployVerticle("maven:foo:module:1.0::my.serviceA", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Cannot resolve artifact"));
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -487,13 +469,12 @@ public class FactoryTest extends VertxTestBase {
 
     configureRepos(repository, null);
 
-    vertx.deployVerticle("maven:my:module:1.0", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Cannot resolve artifact"));
-      assertTrue(res.cause().getMessage().contains("missing:missing"));
+    vertx.deployVerticle("maven:my:module:1.0", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Cannot resolve artifact"));
+      assertTrue(err.getMessage().contains("missing:missing"));
       testComplete();
-    });
+    }));
     await();
   }
 
@@ -501,36 +482,33 @@ public class FactoryTest extends VertxTestBase {
   public void testNonExistentService() throws Exception {
     File testRepo = createMyModuleRepository("testNonExistentService");
     configureRepos(testRepo, null);
-    vertx.deployVerticle("maven:my:module:1.0::not.exists", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Cannot find service descriptor file not.exists.json on classpath"));
+    vertx.deployVerticle("maven:my:module:1.0::not.exists", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Cannot find service descriptor file not.exists.json on classpath"));
       testComplete();
-    });
+    }));
     await();
   }
 
 
   @Test
   public void testBadCoords() throws Exception {
-    vertx.deployVerticle("maven:uhiuhuih::my.wibble", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Invalid maven coordinates:"));
+    vertx.deployVerticle("maven:uhiuhuih::my.wibble", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Invalid maven coordinates:"));
       testComplete();
-    });
+    }));
     await();
   }
 
   // Exists in Maven but not deployable
   @Test
   public void testNotDeployable() throws Exception {
-    vertx.deployVerticle("maven:io.vertx:vertx-core:2.1.2::no-service", res -> {
-      assertTrue(res.failed());
-      assertTrue(res.cause() instanceof IllegalArgumentException);
-      assertTrue(res.cause().getMessage().startsWith("Cannot find service descriptor file no-service.json"));
+    vertx.deployVerticle("maven:io.vertx:vertx-core:2.1.2::no-service", onFailure(err -> {
+      assertTrue(err instanceof IllegalArgumentException);
+      assertTrue(err.getMessage().startsWith("Cannot find service descriptor file no-service.json"));
       testComplete();
-    });
+    }));
     await();
   }
 
