@@ -29,13 +29,27 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>
+            <id>1</id>
             <goals>
               <goal>single</goal>
             </goals>
             <phase>process-classes</phase>
             <configuration>
+              <appendAssemblyId>false</appendAssemblyId>
               <descriptors>
                 <descriptor>src/main/assembly/zip.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+          <execution>
+            <id>2</id>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <appendAssemblyId>true</appendAssemblyId>
+              <descriptors>
                 <descriptor>src/main/assembly/classifier.xml</descriptor>
               </descriptors>
             </configuration>
