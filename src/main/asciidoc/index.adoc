@@ -1,15 +1,13 @@
 = Maven verticle factory
 
 The Maven verticle factory is an implementation of verticle factory loading a service dynamically from a Maven
-repository at run-time.
-
-It's useful if you don't want to package all your service dependencies at build-time into
+repository at run-time. It's useful if you don't want to package all your service dependencies at build-time into
 your application, but would rather install and deploy them dynamically at run-time when they are requested.
 
 ## Usage
 
 Vert.x picks up `VerticleFactory` implementations from the classpath, so you just need to make sure the
-vertx-maven-service-factory jar file on the classpath. First you need to add the Maven verticle factory to your application's
+${maven.artifactId} jar file on the classpath. First you need to add the Maven verticle factory to your application's
 classpath. If you are using a fat jar, you can use the following dependencies:
 
 * Maven (in your `pom.xml`):
@@ -17,9 +15,9 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 [source,xml,subs="+attributes"]
 ----
 <dependency>
-  <groupId>io.vertx</groupId>
-  <artifactId>vertx-maven-service-factory</artifactId>
-  <version>3.3.2</version>
+  <groupId>${maven.groupId}</groupId>
+  <artifactId>${maven.artifactId}</artifactId>
+  <version>${maven.version}</version>
 </dependency>
 ----
 
@@ -27,7 +25,7 @@ classpath. If you are using a fat jar, you can use the following dependencies:
 
 [source,groovy,subs="+attributes"]
 ----
-compile 'io.vertx:vertx-maven-service-factory:3.3.2'
+compile '${maven.groupId}:${maven.artifactId}:${maven.version}'
 ----
 
 This `VerticleFactory` uses the prefix `maven:` to select it when deploying services.
@@ -54,9 +52,9 @@ the constructed classpath to actually load the service.
 
 Given a service identifier the service can be deployed programmatically e.g.:
 
-[source,java]
+[source,$lang]
 ----
-vertx.deployVerticle("maven:com.mycompany:my-artifact:1.2::my-service", options);
+{@link examples.Examples#example1(io.vertx.core.Vertx, io.vertx.core.DeploymentOptions)}
 ----
 
 Or can be deployed on the command line with:
@@ -68,9 +66,9 @@ vertx run maven:com.mycompany:my-artifact:1.2::my-service
 The service name (`my-service`) can be omitted when the _META-INF/MANIFEST_ in the jar containing the
 service contains a `Main-Verticle` entry that declares the verticle to run:
 
-[source,java]
+[source,$lang]
 ----
-vertx.deployVerticle("maven:com.mycompany:my-artifact:1.2", options);
+{@link examples.Examples#example2(io.vertx.core.Vertx, io.vertx.core.DeploymentOptions)}
 ----
 
 And the manifest contains:
@@ -84,9 +82,9 @@ Main-Verticle: service:my-service
 
 You can also declare the verticle factory programmatically:
 
-[source,java]
+[source,$lang]
 ----
-vertx.registerVerticleFactory(new MavenVerticleFactory());
+{@link examples.Examples#example3(io.vertx.core.Vertx)}
 ----
 
 ## Configuring repositories
@@ -95,21 +93,17 @@ The Maven local repository location can be configured using the `vertx.maven.loc
 point to the local repository directory on disc. The default value is: `{user.home}/.m2/repository`
 
 The list of remote repositories can be configured using the `vertx.maven.remoteRepos` system property - this should
-contain a **space** separated list of urls to the remote repositories. The default value is
+contain a*space** separated list of urls to the remote repositories. The default value is
 `https://repo.maven.apache.org/maven2/ https://oss.sonatype.org/content/repositories/snapshots/`
 
 ### Programmatically
 
-You can also configure the repositories programmatically by passing a `link:../../apidocs/io/vertx/maven/ResolverOptions.html[ResolverOptions]`
-object to the constructor of the `link:../../apidocs/io/vertx/maven/MavenVerticleFactory.html[MavenVerticleFactory]`:
+You can also configure the repositories programmatically by passing a {@link io.vertx.maven.ResolverOptions}
+object to the constructor of the {@link io.vertx.maven.MavenVerticleFactory}:
 
-[source,java]
+[source,$lang]
 ----
-vertx.registerVerticleFactory(new MavenVerticleFactory(
-    new ResolverOptions()
-        .setLocalRepository(local)
-        .setRemoteRepositories(remotes))
-);
+{@link examples.Examples#example4(io.vertx.core.Vertx, java.lang.String, java.util.List)}
 ----
 
 ## Remote repository access through authenticated https
@@ -130,14 +124,13 @@ java -jar my-fat-jar -Djavax.net.ssl.trustStore=/my_trust_store.jks -Djavax.net.
 
 To configure the HTTPS property, use:
 
-[source,java]
+[source,$lang]
 ----
-System.setProperty("javax.net.ssl.trustStore", "/my_trust_store.jks");
-System.setProperty("javax.net.ssl.trustStorePassword", "somepassword");
+{@link examples.Examples#example5()}
 ----
 
 Note that programmatic configuration must be done before using the underlying Aether client (so before
-instantiating the `link:../../apidocs/io/vertx/maven/MavenVerticleFactory.html[MavenVerticleFactory]`.
+instantiating the {@link io.vertx.maven.MavenVerticleFactory}.
 
 ## Remote repository access through proxies
 
@@ -149,14 +142,12 @@ The former configures a proxy for remote http repositories and the later configu
 ### Programmatically
 
 You can also configure the repositories programmatically using the
-`link:../../apidocs/io/vertx/maven/ResolverOptions.html#setHttpProxy-java.lang.String-[setHttpProxy]` and
-`link:../../apidocs/io/vertx/maven/ResolverOptions.html#setHttpsProxy-java.lang.String-[setHttpsProxy]`:
+{@link io.vertx.maven.ResolverOptions#setHttpProxy(java.lang.String)} and
+{@link io.vertx.maven.ResolverOptions#setHttpsProxy(java.lang.String)}:
 
-[source,java]
+[source,$lang]
 ----
-vertx.registerVerticleFactory(new MavenVerticleFactory(
-    new ResolverOptions().setHttpProxy(proxy))
-);
+{@link examples.Examples#example6(io.vertx.core.Vertx, java.lang.String)}
 ----
 
 ## Configuring authentication
@@ -174,22 +165,19 @@ time, `daily` to update just once a day, which is the default, or to `never` to 
 It can also be set to `interval:X` where `X` is the number of minutes to allow before updating a _SNAPSHOT_
 dependency.
 
-The refresh policy can also be configured from the `link:../../apidocs/io/vertx/maven/ResolverOptions.html[ResolverOptions]`:
+The refresh policy can also be configured from the {@link io.vertx.maven.ResolverOptions}:
 
-[source,java]
+[source,$lang]
 ----
-vertx.registerVerticleFactory(new MavenVerticleFactory(
-    new ResolverOptions().setRemoteSnapshotPolicy("never"))
-);
+{@link examples.Examples#example7(io.vertx.core.Vertx)}
 ----
 
 ## Customizing the resolver
 
 You can create an instance of
-`link:../../apidocs/io/vertx/maven/MavenVerticleFactory.html[MavenVerticleFactory]` using your own `link:../../apidocs/io/vertx/maven/Resolver.html[Resolver]`:
+{@link io.vertx.maven.MavenVerticleFactory} using your own {@link io.vertx.maven.Resolver}:
 
-[source,java]
+[source,$lang]
 ----
-vertx.registerVerticleFactory(new MavenVerticleFactory(myResolver)
-);
+{@link examples.Examples#example8(io.vertx.core.Vertx, io.vertx.maven.Resolver)}
 ----
