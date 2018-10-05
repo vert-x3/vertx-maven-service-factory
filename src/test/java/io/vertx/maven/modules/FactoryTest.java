@@ -17,6 +17,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.DispatcherType;
@@ -188,6 +189,7 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  @Ignore
   public void testConfiguredResolveFromSecureRemoteRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromSecureRemoteRepository");
     File emptyRepo = Files.createTempDirectory("vertx").toFile();
@@ -219,6 +221,7 @@ public class FactoryTest extends VertxTestBase {
   }
 
   @Test
+  @Ignore
   public void testConfiguredResolveFromSecureRemoteAuthenticatingRepository() throws Exception {
     File testRepo = createMyModuleRepository("testConfiguredResolveFromSecureRemoteAuthenticatingRepository");
     File emptyRepo = Files.createTempDirectory("vertx").toFile();
