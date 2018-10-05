@@ -20,11 +20,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.DispatcherType;
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.ServiceConfigurationError;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -231,11 +236,11 @@ public class FactoryTest extends VertxTestBase {
 
   @Test
   public void testConfiguredHttpProxy() throws Exception {
+    System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     File testRepo = createMyModuleRepository("testConfiguredHttpProxy");
     File emptyRepo = Files.createTempDirectory("vertx").toFile();
     emptyRepo.deleteOnExit();
     startRemoteServer(createRemoteServer(testRepo));
-    System.setProperty(MavenVerticleFactory.HTTP_PROXY_SYS_PROP, "http://localhost:8081");
     Server server = new Server(8081);
     ServletHandler handler = new ServletHandler();
     server.setHandler(handler);
