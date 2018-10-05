@@ -201,6 +201,18 @@
       </testResource>
     </testResources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <javax.net.ssl.trustStore>
+              ${project.build.testOutputDirectory}/io/vertx/maven/modules/client-truststore.jks
+            </javax.net.ssl.trustStore>
+            <javax.net.ssl.trustStorePassword>wibble</javax.net.ssl.trustStorePassword>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
       <!-- We assemble the factory and all the deps we need into a shaded jar.
       This means that when it appears in the Vert.x distro all the aether deps are nicely isolated here -->
       <plugin>

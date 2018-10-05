@@ -273,7 +273,7 @@ public class ResolverImpl implements Resolver {
       }
     } catch (DependencyResolutionException | ArtifactResolutionException e) {
       throw new IllegalArgumentException("Cannot resolve artifact " + artifact.toString() +
-          " in maven repositories: " + e.getMessage());
+        " in maven repositories: " + e.getMessage(), e);
     } catch (NullPointerException e) {
       // Sucks, but aether throws a NPE if repository name is invalid....
       throw new IllegalArgumentException("Cannot find module " + artifact.toString() + ". Maybe repository URL is invalid?");
