@@ -17,8 +17,8 @@
 package io.vertx.maven.resolver;
 
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.maven.Resolver;
 import io.vertx.maven.ResolverOptions;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
