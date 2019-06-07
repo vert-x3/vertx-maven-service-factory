@@ -2,6 +2,7 @@ package io.vertx.maven;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.maven.resolver.ResolutionOptions;
@@ -90,7 +91,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   }
 
   @Override
-  public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
+  public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
     RESOLVE_CALLED = true;
     vertx.<Void>executeBlocking(fut -> {
       try {
