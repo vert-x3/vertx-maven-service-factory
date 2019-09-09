@@ -48,9 +48,10 @@ public class FactoryTest extends VertxTestBase {
     if (! file.exists()) {
       throw new IllegalStateException("Cannot find the constants.json file, please run Maven first");
     }
-    JsonNode node = Json.mapper.readValue(file, JsonNode.class);
-    System.setProperty("version", node.get("version").asText());
-    System.setProperty("localRepository", node.get("localRepository").asText());
+    String content = new String(Files.readAllBytes(file.toPath()));
+    JsonObject node = new JsonObject(content);
+    System.setProperty("version", node.getString("version"));
+    System.setProperty("localRepository", node.getString("localRepository"));
   }
 
   @BeforeClass
