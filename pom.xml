@@ -15,7 +15,7 @@
 
   <properties>
     <aether.version>1.1.0</aether.version>
-    <jetty.version>9.3.7.v20160115</jetty.version>
+    <jetty.version>9.4.22.v20191022</jetty.version>
     <vertx.version>${project.version}</vertx.version>
   </properties>
 
