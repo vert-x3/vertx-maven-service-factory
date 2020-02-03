@@ -383,9 +383,10 @@ public class FactoryTest extends VertxTestBase {
   public void testLoadDependencyFromVerticleLoaderWhenPresent() throws Exception {
     String localRepository = System.getProperty("localRepository");
     AetherHelper localHelper = new AetherHelper(localRepository);
-    ArtifactResult result = localHelper.resolveArtifact("com.google.guava", "guava", "jar", "17.0");
+    ArtifactResult result = localHelper.resolveArtifact("org.junit.jupiter", "junit-jupiter-api", "jar", "5.0.0");
     URLClassLoader loader = new URLClassLoader(new URL[]{result.getArtifact().getFile().toURI().toURL()}, FactoryTest.class.getClassLoader());
-    loader.loadClass("com.google.common.collect.BiMap");
+    Class<?> clazz = loader.loadClass("org.junit.jupiter.api.Test");
+    assertSame(clazz.getClassLoader(), loader);
     assertTrue(result.isResolved());
     ClassLoader prev = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(loader);
