@@ -1,7 +1,6 @@
 package io.vertx.maven;
 
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
@@ -93,15 +92,17 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   @Override
   public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
     RESOLVE_CALLED = true;
-    vertx.<Void>executeBlocking(fut -> {
+    vertx.<Runnable>executeBlocking(fut -> {
       try {
         String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
-        String coordsString = identifierNoPrefix;
+        String coordsString;
         String serviceName = null;
         int pos = identifierNoPrefix.lastIndexOf("::");
         if (pos != -1) {
           coordsString = identifierNoPrefix.substring(0, pos);
           serviceName = identifierNoPrefix.substring(pos + 2);
+        } else {
+          coordsString = identifierNoPrefix;
         }
         MavenCoords coords = new MavenCoords(coordsString);
         if (coords.version() == null) {
@@ -118,23 +119,25 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
         }
 
         // When service name is null we look at the Main-Verticle in META-INF/MANIFEST.MF
-        String serviceIdentifer = null;
+        final String serviceIdentifer;
         if (serviceName != null) {
           serviceIdentifer = "service:" + serviceName;
         } else {
+          String value = null;
           for (Artifact result : artifacts) {
             if (result.getGroupId().equals(coords.owner()) && result.getArtifactId().equals(coords.serviceName())) {
               File file = result.getFile();
               JarFile jarFile = new JarFile(file);
               Manifest manifest = jarFile.getManifest();
               if (manifest != null) {
-                serviceIdentifer = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
+                value = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
               }
             }
           }
-          if (serviceIdentifer == null) {
+          if (value == null) {
             throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
           }
+          serviceIdentifer = value;
         }
 
         // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
@@ -155,17 +158,22 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
             throw new IllegalStateException(e);
           }
         }
-        deploymentOptions.setExtraClasspath(extraCP);
-        deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
-        URLClassLoader urlc = new URLClassLoader(urls, classLoader);
-
-        super.resolve(serviceIdentifer, deploymentOptions, urlc, resolution);
-        fut.complete();
+        fut.complete(() -> {
+          // Execute on event-loop thread
+          deploymentOptions.setExtraClasspath(extraCP);
+          deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
+          URLClassLoader urlc = new URLClassLoader(urls, classLoader);
+          super.resolve(serviceIdentifer, deploymentOptions, urlc, resolution);
+        });
       } catch (Exception e) {
         fut.fail(e);
-        resolution.fail(e);
       }
     }, ar -> {
+      if (ar.succeeded()) {
+        ar.result().run();
+      } else {
+        resolution.fail(ar.cause());
+      }
     });
   }
 

@@ -1,6 +1,6 @@
 package io.vertx.mymodule;
 
-import com.google.common.collect.BiMap;
+import org.junit.jupiter.api.Test;
 import io.vertx.core.AbstractVerticle;
 
 /**
@@ -8,11 +8,11 @@ import io.vertx.core.AbstractVerticle;
  */
 public class MyVerticleA extends AbstractVerticle {
 
-  BiMap map = null;
+  Test map = null;
 
   @Override
   public void start() throws Exception {
-    if (BiMap.class.getClassLoader() != MyVerticleA.class.getClassLoader().getParent()) {
+    if (Test.class.getClassLoader() != MyVerticleA.class.getClassLoader().getParent()) {
       throw new Exception("Dependency not loaded by the correct loader");
     }
   }
