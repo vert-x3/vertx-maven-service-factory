@@ -2,6 +2,7 @@ package io.vertx.maven;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
+import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.maven.resolver.ResolutionOptions;
@@ -15,6 +16,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -90,19 +92,18 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   }
 
   @Override
-  public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
+  protected void createVerticle(String verticleName, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+
     RESOLVE_CALLED = true;
-    vertx.<Runnable>executeBlocking(fut -> {
+    vertx.<Void>executeBlocking(fut -> {
       try {
-        String identifierNoPrefix = VerticleFactory.removePrefix(identifier);
-        String coordsString;
+        String identifierNoPrefix = VerticleFactory.removePrefix(verticleName);
+        String coordsString = identifierNoPrefix;
         String serviceName = null;
         int pos = identifierNoPrefix.lastIndexOf("::");
         if (pos != -1) {
           coordsString = identifierNoPrefix.substring(0, pos);
           serviceName = identifierNoPrefix.substring(pos + 2);
-        } else {
-          coordsString = identifierNoPrefix;
         }
         MavenCoords coords = new MavenCoords(coordsString);
         if (coords.version() == null) {
@@ -112,39 +113,37 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
         List<Artifact> artifacts;
         try {
           artifacts =
-              resolver.resolve(coordsString, new ResolutionOptions());
+            resolver.resolve(coordsString, new ResolutionOptions());
         } catch (NullPointerException e) {
           // Sucks, but aether throws a NPE if repository name is invalid....
           throw new IllegalArgumentException("Cannot find module " + coordsString + ". Maybe repository URL is invalid?");
         }
 
         // When service name is null we look at the Main-Verticle in META-INF/MANIFEST.MF
-        final String serviceIdentifer;
+        String serviceIdentifer = null;
         if (serviceName != null) {
           serviceIdentifer = "service:" + serviceName;
         } else {
-          String value = null;
           for (Artifact result : artifacts) {
             if (result.getGroupId().equals(coords.owner()) && result.getArtifactId().equals(coords.serviceName())) {
               File file = result.getFile();
               JarFile jarFile = new JarFile(file);
               Manifest manifest = jarFile.getManifest();
               if (manifest != null) {
-                value = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
+                serviceIdentifer = (String) manifest.getMainAttributes().get(new Attributes.Name("Main-Verticle"));
               }
             }
           }
-          if (value == null) {
+          if (serviceIdentifer == null) {
             throw new IllegalArgumentException("Invalid service identifier, missing service name: " + identifierNoPrefix);
           }
-          serviceIdentifer = value;
         }
 
         // Generate the classpath - if the jar is already on the Vert.x classpath (e.g. the Vert.x dependencies, netty etc)
         // then we don't add it to the classpath for the module
         List<String> classpath = artifacts.stream().
-            map(res -> res.getFile().getAbsolutePath()).
-            collect(Collectors.toList());
+          map(res -> res.getFile().getAbsolutePath()).
+          collect(Collectors.toList());
         URL[] urls = new URL[classpath.size()];
         int index = 0;
         List<String> extraCP = new ArrayList<>(urls.length);
@@ -158,22 +157,17 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
             throw new IllegalStateException(e);
           }
         }
-        fut.complete(() -> {
-          // Execute on event-loop thread
-          deploymentOptions.setExtraClasspath(extraCP);
-          deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
-          URLClassLoader urlc = new URLClassLoader(urls, classLoader);
-          super.resolve(serviceIdentifer, deploymentOptions, urlc, resolution);
-        });
+        deploymentOptions.setExtraClasspath(extraCP);
+        deploymentOptions.setIsolationGroup("__vertx_maven_" + coordsString);
+        URLClassLoader urlc = new URLClassLoader(urls, classLoader);
+
+        super.createVerticle(serviceIdentifer, deploymentOptions, urlc, promise);
+        fut.complete();
       } catch (Exception e) {
         fut.fail(e);
+        promise.fail(e);
       }
     }, ar -> {
-      if (ar.succeeded()) {
-        ar.result().run();
-      } else {
-        resolution.fail(ar.cause());
-      }
     });
   }
 
