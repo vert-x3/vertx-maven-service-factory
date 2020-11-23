@@ -1,6 +1,6 @@
 # Maven verticle factory
 
-[![Build Status](https://travis-ci.org/vert-x3/vertx-maven-service-factory.svg?branch=master)](https://travis-ci.org/vert-x3/vertx-maven-service-factory)
+[![Build Status](https://github.com/vert-x3/vertx-maven-service-factory/workflows/CI/badge.svg?branch=master)](https://github.com/vert-x3/vertx-maven-service-factory/actions?query=workflow%3ACI)
 
 This is a `VerticleFactory` implementation which deploys a verticle given a service name and load it from a Maven
 repository.
