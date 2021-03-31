@@ -159,6 +159,13 @@
 
     <dependency>
       <groupId>io.vertx</groupId>
+      <artifactId>vertx-parent</artifactId>
+      <version>19</version>
+      <type>pom</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
       <artifactId>vertx-dependencies</artifactId>
       <version>${vertx.version}</version>
       <type>pom</type>
