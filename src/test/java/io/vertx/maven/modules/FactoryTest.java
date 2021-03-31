@@ -78,7 +78,7 @@ public class FactoryTest extends VertxTestBase {
     }
     // Sanity check to make sure the module was resolved with the MavenVerticleFactory not delegated
     // to the ServiceVerticleFactory
-    assertTrue(MavenVerticleFactory.RESOLVE_CALLED);
+    assertWaitUntil(() -> MavenVerticleFactory.RESOLVE_CALLED);
     super.tearDown();
   }
 
