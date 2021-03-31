@@ -94,6 +94,7 @@ public class MavenVerticleFactory extends ServiceVerticleFactory {
   @Override
   protected void createVerticle(String verticleName, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
 
+    System.out.println("RESOLVE CALLED");
     RESOLVE_CALLED = true;
     vertx.<Void>executeBlocking(fut -> {
       try {

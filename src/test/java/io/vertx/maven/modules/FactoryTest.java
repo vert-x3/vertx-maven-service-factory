@@ -592,9 +592,16 @@ public class FactoryTest extends VertxTestBase {
     // Resolve all the dependencies of vertx-core we need from the local repository
     // and install them in the test repo
     String localRepository = System.getProperty("localRepository");
+    System.out.println("localRepository = " + localRepository);
+    System.out.println("localRepository = " + localRepository);
+    System.out.println("localRepository = " + localRepository);
     AetherHelper localHelper = new AetherHelper(localRepository);
+    testHelper.installArtifacts(localHelper.getDependencies("io.vertx", "vertx-parent", "pom", "19"));
+    System.out.println("Installing vertx-parent!!!");
     testHelper.installArtifacts(localHelper.getDependencies("io.vertx", "vertx-dependencies", "pom", System.getProperty("version")));
+    System.out.println("Installing vertx-dependencies!!!");
     testHelper.installArtifacts(localHelper.getDependencies("io.vertx", "vertx-core", "jar", System.getProperty("version")));
+    System.out.println("Installing vertx-core!!!");
 
     // Make sure we have something
     assertTrue(testRepo.exists());
