@@ -15,7 +15,7 @@
       
     <artifactId>vertx-maven-service-factory</artifactId>
       
-    <version>3.9.13-SNAPSHOT</version>
+    <version>3.9.13</version>
       
     <name>Maven Service Factory</name>
       
