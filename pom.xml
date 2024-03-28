@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>vertx-maven-service-factory</artifactId>
-  <version>4.4.9-SNAPSHOT</version>
+  <version>4.4.9</version>
 
   <name>Maven Service Factory</name>
 
