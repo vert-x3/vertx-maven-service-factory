@@ -16,7 +16,6 @@
   <properties>
     <aether.version>1.1.0</aether.version>
     <jetty.version>9.3.7.v20160115</jetty.version>
-    <vertx.version>${project.version}</vertx.version>
   </properties>
 
   <dependencyManagement>
@@ -24,7 +23,7 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-dependencies</artifactId>
-        <version>${vertx.version}</version>
+        <version>${project.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
