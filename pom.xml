@@ -279,7 +279,7 @@
               <projectsDirectory>src/test/projects</projectsDirectory>
               <cloneProjectsTo>${project.build.directory}/test-projects</cloneProjectsTo>
               <filterProperties>
-                <vertx.version>${vertx.version}</vertx.version>
+                <vertx.version>${project.version}</vertx.version>
               </filterProperties>
               <pomIncludes>
                 <pomInclude>pom.xml</pomInclude>

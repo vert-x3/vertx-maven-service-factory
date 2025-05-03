@@ -17,16 +17,12 @@
   <name>Maven Service Factory Test Projects - Parent</name>
   <packaging>pom</packaging>
 
-  <properties>
-    <stack.version>@vertx.version@</stack.version>
-  </properties>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-dependencies</artifactId>
-        <version>${project.version}</version>
+        <version>@vertx.version@</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
