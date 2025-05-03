@@ -13,6 +13,12 @@
 
   <name>Maven Service Factory</name>
 
+  <scm>
+    <connection>scm:git:git@github.com:vert-x3/vertx-maven-service-factory.git</connection>
+    <developerConnection>scm:git:git@github.com:vert-x3/vertx-maven-service-factory.git</developerConnection>
+    <url>git@github.com:vert-x3/vertx-maven-service-factory.git</url>
+  </scm>
+
   <properties>
     <aether.version>1.1.0</aether.version>
     <jetty.version>9.3.7.v20160115</jetty.version>
