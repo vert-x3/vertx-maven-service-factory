@@ -12,7 +12,7 @@
 
   <artifactId>test-module-main-verticle</artifactId>
 
-  <name>Maven Service Factory - Test module with a main verticle declared</name>
+  <name>Vert.x Maven Service Factory - Test module with a main verticle declared</name>
 
   <dependencies>
     <dependency>

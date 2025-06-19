@@ -12,7 +12,7 @@
 
   <artifactId>test-module-dep</artifactId>
 
-  <name>Maven Service Factory - Test module with its custom dependency</name>
+  <name>Vert.x Maven Service Factory - Test module with its custom dependency</name>
 
   <dependencies>
     <dependency>

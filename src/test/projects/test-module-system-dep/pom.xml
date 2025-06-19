@@ -12,7 +12,7 @@
 
   <artifactId>test-module-system-dep</artifactId>
 
-  <name>Maven Service Factory - Test module with a system dependency</name>
+  <name>Vert.x Maven Service Factory - Test module with a system dependency</name>
 
   <dependencies>
     <dependency>

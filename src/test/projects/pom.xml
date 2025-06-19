@@ -14,7 +14,7 @@
   <artifactId>vertx-maven-service-factory-tests</artifactId>
   <version>1.0.0</version>
 
-  <name>Maven Service Factory Test Projects - Parent</name>
+  <name>Vert.x Maven Service Factory Test Projects - Parent</name>
   <packaging>pom</packaging>
 
   <dependencyManagement>
